@@ -1,55 +1,55 @@
-import { GuidelineEntry, Rule, CodeExample } from '../../models';
+import { GuidelineEntry } from '../../types';
 
-export const htmlBestPractices = new GuidelineEntry({
+export const htmlBestPractices: GuidelineEntry = {
   id: 'html-best-practices',
   title: 'HTML Best Practices',
   category: 'code-quality',
   priority: 'critical',
   description: 'Semantic HTML structure rules and accessibility standards for building well-structured, accessible web pages.',
   rules: [
-    new Rule({
+    {
       statement: 'Use semantic HTML elements to convey meaning and structure',
       rationale: 'Semantic elements improve accessibility, SEO, and code maintainability by clearly defining content purpose',
       implementation: 'Choose appropriate semantic elements like <header>, <nav>, <main>, <article>, <section>, <aside>, <footer> instead of generic <div> elements',
       validation: {
         method: 'HTML validation and accessibility audit'
       }
-    }),
-    new Rule({
+    },
+    {
       statement: 'Provide meaningful alt attributes for all images',
       rationale: 'Alt text is essential for screen readers and provides fallback content when images fail to load',
       implementation: 'Include descriptive alt text that conveys the image\'s purpose and content. Use empty alt="" for decorative images',
       validation: {
         method: 'Accessibility testing tools and manual review'
       }
-    }),
-    new Rule({
+    },
+    {
       statement: 'Use proper heading hierarchy (h1-h6) to structure content',
       rationale: 'Logical heading structure helps screen readers navigate content and improves SEO',
       implementation: 'Start with h1 for main page title, use h2 for major sections, h3 for subsections, etc. Do not skip heading levels',
       validation: {
         method: 'Accessibility audit and heading structure analysis'
       }
-    }),
-    new Rule({
+    },
+    {
       statement: 'Include proper form labels and fieldsets',
       rationale: 'Labels are required for screen reader accessibility and improve usability for all users',
       implementation: 'Associate every form input with a <label> using for/id attributes or by wrapping. Group related inputs with <fieldset> and <legend>',
       validation: {
         method: 'Form accessibility testing'
       }
-    }),
-    new Rule({
+    },
+    {
       statement: 'Use valid HTML markup that passes W3C validation',
       rationale: 'Valid HTML ensures consistent rendering across browsers and better accessibility support',
       implementation: 'Follow HTML5 specification, properly nest elements, close all tags, and use correct attribute syntax',
       validation: {
         method: 'W3C Markup Validation Service'
       }
-    })
+    }
   ],
   examples: [
-    new CodeExample({
+    {
       language: 'html',
       title: 'Semantic HTML Structure',
       goodExample: `<!DOCTYPE html>
@@ -131,8 +131,8 @@ export const htmlBestPractices = new GuidelineEntry({
 </body>
 </html>`,
       explanation: 'The good example uses semantic HTML5 elements that convey meaning, while the bad example uses generic div elements that provide no semantic information.'
-    }),
-    new CodeExample({
+    },
+    {
       language: 'html',
       title: 'Accessible Form Structure',
       goodExample: `<form>
@@ -192,7 +192,7 @@ export const htmlBestPractices = new GuidelineEntry({
   <input type="submit" value="Submit Form">
 </form>`,
       explanation: 'The good example uses proper labels, fieldsets, and ARIA attributes for accessibility, while the bad example lacks proper form structure and accessibility features.'
-    })
+    }
   ],
   relatedGuidelines: ['accessibility-compliance', 'css-organization']
-});
+};

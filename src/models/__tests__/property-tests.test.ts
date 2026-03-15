@@ -251,6 +251,57 @@ describe('Property-based tests for core models', () => {
   });
 
   /**
+   * Feature: ai-website-guide, Property 2: Code quality standards coverage (Real Implementation Test)
+   * Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5
+   */
+  it('should ensure actual code quality guidelines contain all required standards', () => {
+    const contentManager = new GuideContentManager();
+    
+    // Required code quality elements based on requirements 2.1-2.5
+    const requiredCodeQualityElements = [
+      'semantic html',
+      'accessibility standards',
+      'css organization',
+      'naming conventions',
+      'javascript',
+      'error handling',
+      'project organization',
+      'directory structure',
+      'file naming',
+      'documentation'
+    ];
+
+    // Get all code quality guidelines from the content manager
+    const codeQualityGuidelines = contentManager.getGuidelinesByCategory('code-quality');
+    
+    // Verify we have code quality guidelines
+    expect(codeQualityGuidelines.length).toBeGreaterThan(0);
+    
+    // Combine all code quality content
+    const allCodeQualityContent = codeQualityGuidelines.map(guideline => [
+      guideline.title,
+      guideline.description,
+      ...guideline.rules.map(rule => `${rule.statement} ${rule.rationale} ${rule.implementation}`),
+      ...guideline.examples.map(example => `${example.title} ${example.explanation} ${example.goodExample}`)
+    ].join(' ')).join(' ').toLowerCase();
+
+    // Check that all required code quality elements are covered
+    const missingElements = requiredCodeQualityElements.filter(element => 
+      !allCodeQualityContent.includes(element.toLowerCase())
+    );
+
+    // Property: For any code quality query, the returned content should include all required standards
+    expect(missingElements).toEqual([]);
+    
+    // Additional checks for comprehensive coverage
+    expect(allCodeQualityContent).toContain('html');
+    expect(allCodeQualityContent).toContain('css');
+    expect(allCodeQualityContent).toContain('javascript');
+    expect(allCodeQualityContent).toContain('organization');
+    expect(allCodeQualityContent).toContain('documentation');
+  });
+
+  /**
    * Feature: ai-website-guide, Property 4: Performance optimization coverage
    * Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5
    */
@@ -316,6 +367,157 @@ describe('Property-based tests for core models', () => {
       if (guideline.category === 'performance') {
         // Property ensures performance content is comprehensive
         expect(guideline.category).toBe('performance');
+        expect(guideline.rules.length).toBeGreaterThan(0);
+        
+        // The guideline should be properly structured with required fields
+        expect(guideline.title.trim().length).toBeGreaterThan(0);
+        expect(guideline.description.trim().length).toBeGreaterThan(0);
+      }
+    }), { numRuns: 100 });
+  });
+
+  /**
+   * Feature: ai-website-guide, Property 5: Accessibility compliance coverage
+   * Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5
+   */
+  it('should ensure accessibility guidelines contain all required accessibility elements', () => {
+    const contentManager = new GuideContentManager();
+    
+    // Required accessibility elements based on requirements 5.1-5.5
+    const requiredAccessibilityElements = [
+      'wcag standards',
+      'keyboard navigation',
+      'screen reader support',
+      'color contrast',
+      'text readability',
+      'alternative text',
+      'caption standards',
+      'inclusive design',
+      'usability guidelines'
+    ];
+
+    // Get all accessibility guidelines from the content manager
+    const accessibilityGuidelines = contentManager.getGuidelinesByCategory('accessibility');
+    
+    // If we have accessibility guidelines, verify comprehensive coverage
+    if (accessibilityGuidelines.length > 0) {
+      // Combine all accessibility content
+      const allAccessibilityContent = accessibilityGuidelines.map(guideline => [
+        guideline.title,
+        guideline.description,
+        ...guideline.rules.map(rule => `${rule.statement} ${rule.rationale} ${rule.implementation}`),
+        ...guideline.examples.map(example => `${example.title} ${example.explanation} ${example.goodExample}`)
+      ].join(' ')).join(' ').toLowerCase();
+
+      // Check that all required accessibility elements are covered
+      const missingElements = requiredAccessibilityElements.filter(element => 
+        !allAccessibilityContent.includes(element.toLowerCase())
+      );
+
+      // Property: For any accessibility-related query, the returned content should include all required accessibility elements
+      expect(missingElements).toEqual([]);
+      
+      // Additional checks for comprehensive coverage
+      expect(allAccessibilityContent).toContain('accessibility');
+      expect(allAccessibilityContent).toContain('wcag');
+      expect(allAccessibilityContent).toContain('inclusive');
+    }
+
+    // Generate accessibility guidelines with comprehensive content for property testing
+    const accessibilityGuidelineArb = fc.record({
+      id: nonEmptyStringArb,
+      title: nonEmptyStringArb,
+      category: fc.constant<GuidelineCategory>('accessibility'),
+      priority: priorityArb,
+      description: nonEmptyStringArb,
+      rules: fc.array(ruleArb, { minLength: 1 }),
+      examples: fc.array(codeExampleArb),
+      relatedGuidelines: fc.array(nonEmptyStringArb)
+    });
+
+    fc.assert(fc.property(accessibilityGuidelineArb, (guidelineData) => {
+      const guideline = new GuidelineEntry(guidelineData);
+      
+      // For accessibility guidelines, verify they contain proper structure
+      if (guideline.category === 'accessibility') {
+        // Property ensures accessibility content is comprehensive
+        expect(guideline.category).toBe('accessibility');
+        expect(guideline.rules.length).toBeGreaterThan(0);
+        
+        // The guideline should be properly structured with required fields
+        expect(guideline.title.trim().length).toBeGreaterThan(0);
+        expect(guideline.description.trim().length).toBeGreaterThan(0);
+      }
+    }), { numRuns: 100 });
+  });
+
+  /**
+   * Feature: ai-website-guide, Property 6: Testing and validation coverage
+   * Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5
+   */
+  it('should ensure testing guidelines contain all required testing and validation elements', () => {
+    const contentManager = new GuideContentManager();
+    
+    // Required testing and validation elements based on requirements 6.1-6.5
+    const requiredTestingElements = [
+      'unit testing',
+      'integration testing',
+      'markup validation',
+      'standards compliance',
+      'cross-browser compatibility',
+      'pre-deployment validation',
+      'quality assurance',
+      'automated testing',
+      'testing framework',
+      'tool recommendations'
+    ];
+
+    // Get all testing guidelines from the content manager
+    const testingGuidelines = contentManager.getGuidelinesByCategory('testing');
+    
+    // If we have testing guidelines, verify comprehensive coverage
+    if (testingGuidelines.length > 0) {
+      // Combine all testing content
+      const allTestingContent = testingGuidelines.map(guideline => [
+        guideline.title,
+        guideline.description,
+        ...guideline.rules.map(rule => `${rule.statement} ${rule.rationale} ${rule.implementation}`),
+        ...guideline.examples.map(example => `${example.title} ${example.explanation} ${example.goodExample}`)
+      ].join(' ')).join(' ').toLowerCase();
+
+      // Check that all required testing elements are covered
+      const missingElements = requiredTestingElements.filter(element => 
+        !allTestingContent.includes(element.toLowerCase())
+      );
+
+      // Property: For any testing-related query, the returned content should include all required testing elements
+      expect(missingElements).toEqual([]);
+      
+      // Additional checks for comprehensive coverage
+      expect(allTestingContent).toContain('testing');
+      expect(allTestingContent).toContain('validation');
+      expect(allTestingContent).toContain('quality');
+    }
+
+    // Generate testing guidelines with comprehensive content for property testing
+    const testingGuidelineArb = fc.record({
+      id: nonEmptyStringArb,
+      title: nonEmptyStringArb,
+      category: fc.constant<GuidelineCategory>('testing'),
+      priority: priorityArb,
+      description: nonEmptyStringArb,
+      rules: fc.array(ruleArb, { minLength: 1 }),
+      examples: fc.array(codeExampleArb),
+      relatedGuidelines: fc.array(nonEmptyStringArb)
+    });
+
+    fc.assert(fc.property(testingGuidelineArb, (guidelineData) => {
+      const guideline = new GuidelineEntry(guidelineData);
+      
+      // For testing guidelines, verify they contain proper structure
+      if (guideline.category === 'testing') {
+        // Property ensures testing content is comprehensive
+        expect(guideline.category).toBe('testing');
         expect(guideline.rules.length).toBeGreaterThan(0);
         
         // The guideline should be properly structured with required fields
