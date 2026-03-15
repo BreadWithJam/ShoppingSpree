@@ -10,6 +10,8 @@ import { CartManager } from './homepage/cart.js';
 import { ProductManager } from './homepage/product.js';
 import { AccessibilityManager } from './homepage/accessibility.js';
 import { PerformanceManager } from './homepage/performance.js';
+import { HeroImageLoader } from './homepage/hero-image-loader.js';
+import { LazyLoadingManager } from './homepage/lazy-loading.js';
 
 /**
  * Application Class - Main application controller
@@ -58,7 +60,9 @@ class EcommerceApp {
       { name: 'cart', class: CartManager },
       { name: 'product', class: ProductManager },
       { name: 'accessibility', class: AccessibilityManager },
-      { name: 'performance', class: PerformanceManager }
+      { name: 'performance', class: PerformanceManager },
+      { name: 'heroImageLoader', class: HeroImageLoader },
+      { name: 'lazyLoading', class: LazyLoadingManager }
     ];
 
     for (const config of moduleConfigs) {

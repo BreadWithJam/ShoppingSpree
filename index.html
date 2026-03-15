@@ -121,7 +121,57 @@
           </div>
         </div>
         <div class="hero-section__media" aria-hidden="true">
-          <div class="hero-section__visual"></div>
+          <div class="hero-section__image-container">
+            <div class="hero-section__loading-placeholder" aria-hidden="true">
+              <div class="hero-section__loading-spinner"></div>
+            </div>
+            <picture class="hero-section__picture">
+              <!-- WebP format for modern browsers -->
+              <source 
+                media="(min-width: 1024px)" 
+                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80&fm=webp 1200w,
+                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80&fm=webp 800w"
+                sizes="(min-width: 1024px) 600px, 400px"
+                type="image/webp"
+              >
+              <source 
+                media="(min-width: 768px)" 
+                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80&fm=webp 800w,
+                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80&fm=webp 600w"
+                sizes="400px"
+                type="image/webp"
+              >
+              <!-- JPEG fallback -->
+              <source 
+                media="(min-width: 1024px)" 
+                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80 1200w,
+                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80 800w"
+                sizes="(min-width: 1024px) 600px, 400px"
+                type="image/jpeg"
+              >
+              <source 
+                media="(min-width: 768px)" 
+                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80 800w,
+                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80 600w"
+                sizes="400px"
+                type="image/jpeg"
+              >
+              <img 
+                class="hero-section__image"
+                src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80" 
+                alt=""
+                loading="eager"
+                width="600"
+                height="400"
+                data-hero-image
+              >
+            </picture>
+            <div class="hero-section__error-state" aria-hidden="true" hidden>
+              <div class="hero-section__error-icon">⚠️</div>
+              <p class="hero-section__error-text">Image failed to load</p>
+            </div>
+          </div>
+          <div class="hero-section__visual-overlay"></div>
         </div>
       </div>
     </section>
@@ -169,61 +219,339 @@
           <a href="/products" class="section-link">View All Products</a>
         </header>
         <ul class="product-grid">
-          <li><article class="product-card">
-            <div class="product-card__image" aria-hidden="true">👟</div>
-            <div class="product-card__content">
-              <h3 class="product-card__title">Running Sneakers</h3>
-              <div class="product-card__pricing">
-                <span class="product-card__price">$49.99</span>
-                <span class="product-card__original-price">$79.99</span>
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Running Sneakers - Comfortable athletic shoes for daily running"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="37% off">-37%</div>
               </div>
-              <button class="product-card__action button button--primary" data-product-id="1" aria-label="Add Running Sneakers to cart">
-                Add to Cart
-              </button>
-            </div>
-          </article></li>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Running Sneakers</h3>
+                <div class="product-card__rating" role="img" aria-label="4.5 out of 5 stars, 128 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--half" aria-hidden="true">☆</span>
+                  </div>
+                  <span class="product-card__rating-text">(128)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$49.99</span>
+                  <span class="product-card__original-price">$79.99</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="1" aria-label="Add Running Sneakers to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
 
-          <li><article class="product-card">
-            <div class="product-card__image" aria-hidden="true">📱</div>
-            <div class="product-card__content">
-              <h3 class="product-card__title">Wireless Earbuds</h3>
-              <div class="product-card__pricing">
-                <span class="product-card__price">$29.99</span>
-                <span class="product-card__original-price">$59.99</span>
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Wireless Headphones - Premium noise-cancelling headphones"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="25% off">-25%</div>
               </div>
-              <button class="product-card__action button button--primary" data-product-id="2" aria-label="Add Wireless Earbuds to cart">
-                Add to Cart
-              </button>
-            </div>
-          </article></li>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Wireless Headphones</h3>
+                <div class="product-card__rating" role="img" aria-label="4.8 out of 5 stars, 256 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                  </div>
+                  <span class="product-card__rating-text">(256)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$149.99</span>
+                  <span class="product-card__original-price">$199.99</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="2" aria-label="Add Wireless Headphones to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
 
-          <li><article class="product-card">
-            <div class="product-card__image" aria-hidden="true">🎒</div>
-            <div class="product-card__content">
-              <h3 class="product-card__title">Travel Backpack</h3>
-              <div class="product-card__pricing">
-                <span class="product-card__price">$39.99</span>
-                <span class="product-card__original-price">$65.00</span>
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Travel Backpack - Durable backpack for adventures"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="38% off">-38%</div>
               </div>
-              <button class="product-card__action button button--primary" data-product-id="3" aria-label="Add Travel Backpack to cart">
-                Add to Cart
-              </button>
-            </div>
-          </article></li>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Travel Backpack</h3>
+                <div class="product-card__rating" role="img" aria-label="4.2 out of 5 stars, 89 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--empty" aria-hidden="true">☆</span>
+                  </div>
+                  <span class="product-card__rating-text">(89)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$39.99</span>
+                  <span class="product-card__original-price">$65.00</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="3" aria-label="Add Travel Backpack to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
 
-          <li><article class="product-card">
-            <div class="product-card__image" aria-hidden="true">⌚</div>
-            <div class="product-card__content">
-              <h3 class="product-card__title">Smart Watch</h3>
-              <div class="product-card__pricing">
-                <span class="product-card__price">$89.99</span>
-                <span class="product-card__original-price">$149.99</span>
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Smart Watch - Advanced fitness tracking smartwatch"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="40% off">-40%</div>
               </div>
-              <button class="product-card__action button button--primary" data-product-id="4" aria-label="Add Smart Watch to cart">
-                Add to Cart
-              </button>
-            </div>
-          </article></li>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Smart Watch</h3>
+                <div class="product-card__rating" role="img" aria-label="4.6 out of 5 stars, 342 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--half" aria-hidden="true">☆</span>
+                  </div>
+                  <span class="product-card__rating-text">(342)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$89.99</span>
+                  <span class="product-card__original-price">$149.99</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="4" aria-label="Add Smart Watch to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Electronics Category Section -->
+    <section class="product-showcase product-showcase--electronics" role="region" aria-labelledby="electronics-products-heading">
+      <div class="section-container">
+        <header class="section-header">
+          <h2 id="electronics-products-heading" class="section-title">Electronics <span class="section-title__highlight">Collection</span></h2>
+          <a href="/category/electronics" class="section-link">View All Electronics</a>
+        </header>
+        <ul class="product-grid">
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1588508065123-287b28e013da?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Laptop Computer - High-performance laptop for work and gaming"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="15% off">-15%</div>
+              </div>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Laptop Computer</h3>
+                <div class="product-card__rating" role="img" aria-label="4.7 out of 5 stars, 189 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--half" aria-hidden="true">☆</span>
+                  </div>
+                  <span class="product-card__rating-text">(189)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$899.99</span>
+                  <span class="product-card__original-price">$1,059.99</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="5" aria-label="Add Laptop Computer to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
+
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Smartphone - Latest model with advanced camera features"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="20% off">-20%</div>
+              </div>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Smartphone</h3>
+                <div class="product-card__rating" role="img" aria-label="4.4 out of 5 stars, 567 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--empty" aria-hidden="true">☆</span>
+                  </div>
+                  <span class="product-card__rating-text">(567)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$599.99</span>
+                  <span class="product-card__original-price">$749.99</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="6" aria-label="Add Smartphone to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Fashion Category Section -->
+    <section class="product-showcase product-showcase--fashion" role="region" aria-labelledby="fashion-products-heading">
+      <div class="section-container">
+        <header class="section-header">
+          <h2 id="fashion-products-heading" class="section-title">Fashion <span class="section-title__highlight">Trends</span></h2>
+          <a href="/category/fashion" class="section-link">View All Fashion</a>
+        </header>
+        <ul class="product-grid">
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1434389677669-e08b4cac3105?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Designer Dress - Elegant evening dress for special occasions"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="30% off">-30%</div>
+              </div>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Designer Dress</h3>
+                <div class="product-card__rating" role="img" aria-label="4.9 out of 5 stars, 78 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                  </div>
+                  <span class="product-card__rating-text">(78)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$129.99</span>
+                  <span class="product-card__original-price">$185.99</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="7" aria-label="Add Designer Dress to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
+
+          <li>
+            <article class="product-card" itemscope itemtype="https://schema.org/Product">
+              <div class="product-card__image-container">
+                <picture class="product-card__picture">
+                  <img 
+                    class="product-card__image" 
+                    src="https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" 
+                    alt="Leather Jacket - Premium leather jacket with modern styling"
+                    loading="lazy"
+                    width="400"
+                    height="300"
+                    itemprop="image"
+                  >
+                </picture>
+                <div class="product-card__badge" aria-label="25% off">-25%</div>
+              </div>
+              <div class="product-card__content">
+                <h3 class="product-card__title" itemprop="name">Leather Jacket</h3>
+                <div class="product-card__rating" role="img" aria-label="4.3 out of 5 stars, 145 reviews">
+                  <div class="product-card__stars">
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--filled" aria-hidden="true">★</span>
+                    <span class="star star--empty" aria-hidden="true">☆</span>
+                  </div>
+                  <span class="product-card__rating-text">(145)</span>
+                </div>
+                <div class="product-card__pricing" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+                  <span class="product-card__price" itemprop="price">$199.99</span>
+                  <span class="product-card__original-price">$266.99</span>
+                </div>
+                <button class="product-card__action button button--primary" data-product-id="8" aria-label="Add Leather Jacket to cart">
+                  Add to Cart
+                </button>
+              </div>
+            </article>
+          </li>
         </ul>
       </div>
     </section>
