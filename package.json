@@ -1,15 +1,34 @@
 {
-  "name": "ai-website-guide",
+  "name": "ecommerce-homepage",
   "version": "1.0.0",
-  "description": "AI Website Development Guide - comprehensive reference for building secure, clean, and well-architected websites",
-  "main": "dist/index.js",
+  "description": "Modern, accessible, and high-performance ecommerce homepage",
+  "main": "js/main.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run build:css && npm run build:js && npm run optimize",
+    "build:css": "postcss styles.css -o dist/styles.min.css --map",
+    "build:js": "terser js/main.js -o dist/main.min.js --source-map --mangle --compress",
+    "build:modules": "terser js/modules/*.js -o dist/modules.min.js --source-map --mangle --compress",
+    "optimize": "npm run optimize:images && npm run optimize:html",
+    "optimize:images": "imagemin 'images/**/*.{jpg,png,svg}' --out-dir=dist/images --plugin=imagemin-mozjpeg --plugin=imagemin-pngquant --plugin=imagemin-svgo",
+    "optimize:html": "html-minifier --input-dir . --output-dir dist --file-ext html --remove-comments --collapse-whitespace --minify-css --minify-js",
+    "dev": "npm run dev:server",
+    "dev:server": "live-server --port=3000 --open=/index.html",
+    "watch": "npm run watch:css & npm run watch:js",
+    "watch:css": "postcss styles.css -o dist/styles.min.css --map --watch",
+    "watch:js": "chokidar 'js/**/*.js' -c 'npm run build:js'",
     "test": "jest",
     "test:watch": "jest --watch",
-    "dev": "ts-node src/index.ts"
+    "lint": "eslint js/**/*.js",
+    "lint:fix": "eslint js/**/*.js --fix",
+    "validate": "npm run validate:html && npm run validate:css && npm run validate:js",
+    "validate:html": "html-validate index.html",
+    "validate:css": "stylelint styles.css",
+    "validate:js": "eslint js/**/*.js",
+    "audit": "npm run audit:accessibility && npm run audit:performance",
+    "audit:accessibility": "axe-cli http://localhost:3000",
+    "audit:performance": "lighthouse http://localhost:3000 --output=json --output-path=./reports/lighthouse.json"
   },
-  "keywords": ["ai", "website", "guide", "development", "security", "accessibility"],
+  "keywords": ["ecommerce", "homepage", "accessibility", "performance", "responsive", "modern"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
@@ -19,6 +38,28 @@
     "ts-jest": "^29.1.0",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0",
-    "fast-check": "^3.15.0"
-  }
+    "fast-check": "^3.15.0",
+    "postcss": "^8.4.31",
+    "postcss-cli": "^10.1.0",
+    "autoprefixer": "^10.4.16",
+    "cssnano": "^6.0.1",
+    "terser": "^5.24.0",
+    "imagemin": "^8.0.1",
+    "imagemin-mozjpeg": "^10.0.0",
+    "imagemin-pngquant": "^9.0.2",
+    "imagemin-svgo": "^10.0.1",
+    "html-minifier": "^4.0.0",
+    "live-server": "^1.2.2",
+    "chokidar-cli": "^3.0.0",
+    "eslint": "^8.54.0",
+    "stylelint": "^15.11.0",
+    "html-validate": "^8.7.4",
+    "axe-cli": "^4.8.2",
+    "lighthouse": "^11.4.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
 }

@@ -1,107 +1,255 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ShoppingSpree - Your premier online shopping destination with thousands of products at unbeatable prices. Fast shipping, easy returns.">
+  <meta name="keywords" content="online shopping, ecommerce, deals, fashion, electronics, home, sports">
+  <meta name="author" content="ShoppingSpree">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph Meta Tags -->
+  <meta property="og:title" content="ShoppingSpree | Your Online Store">
+  <meta property="og:description" content="Discover thousands of products at unbeatable prices. Fast shipping, easy returns.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://shoppingspree.com">
+  
+  <!-- Twitter Card Meta Tags -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ShoppingSpree | Your Online Store">
+  <meta name="twitter:description" content="Discover thousands of products at unbeatable prices. Fast shipping, easy returns.">
+  
   <title>ShoppingSpree | Your Online Store</title>
-  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Preload critical resources -->
+  <link rel="preload" href="styles.css" as="style">
+  <link rel="preload" href="js/main.js" as="script">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
+  <!-- Skip to main content link for accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">ShoppingSpree</div>
-    <nav>
-      <a href="#">Home</a>
-      <a href="#">Shop</a>
-      <a href="#">Deals</a>
-      <a href="#">About</a>
-      <a href="#">Contact</a>
-    </nav>
-    <button class="cart-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
-        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-      </svg>
-      <span class="cart-count">0</span>
-    </button>
+  <!-- Site Header -->
+  <header class="site-header" role="banner">
+    <div class="site-header__container">
+      <div class="site-header__brand">
+        <a href="/" class="site-header__logo" aria-label="ShoppingSpree Homepage">
+          <span class="logo-text">ShoppingSpree</span>
+        </a>
+      </div>
+      
+      <nav class="site-header__navigation" role="navigation" aria-label="Main navigation">
+        <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+          <span class="nav-toggle__line"></span>
+          <span class="nav-toggle__line"></span>
+          <span class="nav-toggle__line"></span>
+        </button>
+        <ul class="nav-menu">
+          <li class="nav-menu__item">
+            <a href="/" class="nav-menu__link" aria-current="page">Home</a>
+          </li>
+          <li class="nav-menu__item">
+            <a href="/shop" class="nav-menu__link">Shop</a>
+          </li>
+          <li class="nav-menu__item">
+            <a href="/deals" class="nav-menu__link">Deals</a>
+          </li>
+          <li class="nav-menu__item">
+            <a href="/about" class="nav-menu__link">About</a>
+          </li>
+          <li class="nav-menu__item">
+            <a href="/contact" class="nav-menu__link">Contact</a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="site-header__actions">
+        <div class="search-component">
+          <form class="search-form" role="search" aria-label="Product search">
+            <label for="search-input" class="visually-hidden">Search products</label>
+            <input 
+              type="search" 
+              id="search-input" 
+              class="search-input" 
+              placeholder="Search products..." 
+              aria-describedby="search-help"
+              autocomplete="off"
+            >
+            <button type="submit" class="search-button" aria-label="Submit search">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+            </button>
+            <div id="search-help" class="visually-hidden">Press Enter to search or use arrow keys to navigate suggestions</div>
+          </form>
+          <div class="search-suggestions" role="listbox" aria-label="Search suggestions" hidden></div>
+        </div>
+        
+        <div class="cart-component">
+          <button class="cart-button" aria-label="Shopping cart" aria-describedby="cart-status">
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="9" cy="21" r="1"/>
+              <circle cx="20" cy="21" r="1"/>
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span class="cart-count" aria-live="polite">0</span>
+          </button>
+          <div id="cart-status" class="visually-hidden">Shopping cart with 0 items</div>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <!-- HERO -->
-  <section class="hero">
-    <h1>Shop <span>Smarter</span>,<br>Live Better</h1>
-    <p>Discover thousands of products at unbeatable prices. Fast shipping, easy returns.</p>
-    <a href="#" class="hero-btn">Shop Now</a>
-  </section>
+  <!-- Main Content -->
+  <main id="main-content" class="main-content">
+    <!-- Hero Section -->
+    <section class="hero-section" role="banner">
+      <div class="hero-section__container">
+        <div class="hero-section__content">
+          <h1 class="hero-section__title">Shop <span class="hero-section__highlight">Smarter</span>,<br>Live Better</h1>
+          <p class="hero-section__description">Discover thousands of products at unbeatable prices. Fast shipping, easy returns.</p>
+          <div class="hero-section__actions">
+            <a href="/shop" class="button button--primary">Shop Now</a>
+            <a href="/deals" class="button button--secondary">View Deals</a>
+          </div>
+        </div>
+        <div class="hero-section__media" aria-hidden="true">
+          <div class="hero-section__visual"></div>
+        </div>
+      </div>
+    </section>
 
-  <!-- CATEGORIES -->
-  <div class="section">
-    <h2 class="section-title">Browse <span>Categories</span></h2>
-    <div class="categories">
-      <a href="#" class="category-card"><div class="icon">👗</div><p>Fashion</p></a>
-      <a href="#" class="category-card"><div class="icon">📱</div><p>Electronics</p></a>
-      <a href="#" class="category-card"><div class="icon">🏠</div><p>Home & Living</p></a>
-      <a href="#" class="category-card"><div class="icon">⚽</div><p>Sports</p></a>
-      <a href="#" class="category-card"><div class="icon">💄</div><p>Beauty</p></a>
-      <a href="#" class="category-card"><div class="icon">📚</div><p>Books</p></a>
+    <!-- Categories Section -->
+    <section class="categories-section" role="region" aria-labelledby="categories-heading">
+      <div class="section-container">
+        <header class="section-header">
+          <h2 id="categories-heading" class="section-title">Browse <span class="section-title__highlight">Categories</span></h2>
+        </header>
+        <div class="categories-grid">
+          <a href="/category/fashion" class="category-card">
+            <div class="category-card__icon" aria-hidden="true">👗</div>
+            <h3 class="category-card__title">Fashion</h3>
+          </a>
+          <a href="/category/electronics" class="category-card">
+            <div class="category-card__icon" aria-hidden="true">📱</div>
+            <h3 class="category-card__title">Electronics</h3>
+          </a>
+          <a href="/category/home-living" class="category-card">
+            <div class="category-card__icon" aria-hidden="true">🏠</div>
+            <h3 class="category-card__title">Home & Living</h3>
+          </a>
+          <a href="/category/sports" class="category-card">
+            <div class="category-card__icon" aria-hidden="true">⚽</div>
+            <h3 class="category-card__title">Sports</h3>
+          </a>
+          <a href="/category/beauty" class="category-card">
+            <div class="category-card__icon" aria-hidden="true">💄</div>
+            <h3 class="category-card__title">Beauty</h3>
+          </a>
+          <a href="/category/books" class="category-card">
+            <div class="category-card__icon" aria-hidden="true">📚</div>
+            <h3 class="category-card__title">Books</h3>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Products Section -->
+    <section class="product-showcase" role="region" aria-labelledby="featured-products-heading">
+      <div class="section-container">
+        <header class="section-header">
+          <h2 id="featured-products-heading" class="section-title">Featured <span class="section-title__highlight">Products</span></h2>
+          <a href="/products" class="section-link">View All Products</a>
+        </header>
+        <div class="product-grid">
+          <article class="product-card">
+            <div class="product-card__image" aria-hidden="true">👟</div>
+            <div class="product-card__content">
+              <h3 class="product-card__title">Running Sneakers</h3>
+              <div class="product-card__pricing">
+                <span class="product-card__price">$49.99</span>
+                <span class="product-card__original-price">$79.99</span>
+              </div>
+              <button class="product-card__action button button--primary" data-product-id="1">
+                Add to Cart
+              </button>
+            </div>
+          </article>
+
+          <article class="product-card">
+            <div class="product-card__image" aria-hidden="true">📱</div>
+            <div class="product-card__content">
+              <h3 class="product-card__title">Wireless Earbuds</h3>
+              <div class="product-card__pricing">
+                <span class="product-card__price">$29.99</span>
+                <span class="product-card__original-price">$59.99</span>
+              </div>
+              <button class="product-card__action button button--primary" data-product-id="2">
+                Add to Cart
+              </button>
+            </div>
+          </article>
+
+          <article class="product-card">
+            <div class="product-card__image" aria-hidden="true">🎒</div>
+            <div class="product-card__content">
+              <h3 class="product-card__title">Travel Backpack</h3>
+              <div class="product-card__pricing">
+                <span class="product-card__price">$39.99</span>
+                <span class="product-card__original-price">$65.00</span>
+              </div>
+              <button class="product-card__action button button--primary" data-product-id="3">
+                Add to Cart
+              </button>
+            </div>
+          </article>
+
+          <article class="product-card">
+            <div class="product-card__image" aria-hidden="true">⌚</div>
+            <div class="product-card__content">
+              <h3 class="product-card__title">Smart Watch</h3>
+              <div class="product-card__pricing">
+                <span class="product-card__price">$89.99</span>
+                <span class="product-card__original-price">$149.99</span>
+              </div>
+              <button class="product-card__action button button--primary" data-product-id="4">
+                Add to Cart
+              </button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Promotional Banner -->
+    <section class="promo-banner" role="region" aria-labelledby="promo-heading">
+      <div class="promo-banner__container">
+        <h2 id="promo-heading" class="promo-banner__title">Summer Sale — Up to 60% Off!</h2>
+        <p class="promo-banner__description">Limited time offer. Use code <strong>SUMMER60</strong> at checkout.</p>
+        <a href="/sale" class="button button--inverse">Shop the Sale</a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="site-footer__container">
+      <p class="site-footer__copyright">
+        &copy; 2026 ShoppingSpree. Built with love. | 
+        <a href="/privacy" class="site-footer__link">Privacy</a> &middot; 
+        <a href="/terms" class="site-footer__link">Terms</a>
+      </p>
     </div>
-  </div>
-
-  <!-- FEATURED PRODUCTS -->
-  <div class="section">
-    <h2 class="section-title">Featured <span>Products</span></h2>
-    <div class="products">
-
-      <div class="product-card">
-        <div class="product-img">👟</div>
-        <div class="product-info">
-          <h3>Running Sneakers</h3>
-          <span class="price">$49.99</span><span class="old-price">$79.99</span>
-          <button class="add-to-cart">Add to Cart</button>
-        </div>
-      </div>
-
-      <div class="product-card">
-        <div class="product-img">📱</div>
-        <div class="product-info">
-          <h3>Wireless Earbuds</h3>
-          <span class="price">$29.99</span><span class="old-price">$59.99</span>
-          <button class="add-to-cart">Add to Cart</button>
-        </div>
-      </div>
-
-      <div class="product-card">
-        <div class="product-img">🎒</div>
-        <div class="product-info">
-          <h3>Travel Backpack</h3>
-          <span class="price">$39.99</span><span class="old-price">$65.00</span>
-          <button class="add-to-cart">Add to Cart</button>
-        </div>
-      </div>
-
-      <div class="product-card">
-        <div class="product-img">⌚</div>
-        <div class="product-info">
-          <h3>Smart Watch</h3>
-          <span class="price">$89.99</span><span class="old-price">$149.99</span>
-          <button class="add-to-cart">Add to Cart</button>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- PROMO BANNER -->
-  <div class="banner">
-    <h2>Summer Sale — Up to 60% Off!</h2>
-    <p>Limited time offer. Use code <strong>SUMMER60</strong> at checkout.</p>
-    <a href="#" class="hero-btn" style="background:#fff;color:#e94560;">Shop the Sale</a>
-  </div>
-
-  <!-- FOOTER -->
-  <footer>
-    <p>&copy; 2026 ShoppingSpree. Built with love. | <a href="#">Privacy</a> &middot; <a href="#">Terms</a></p>
   </footer>
 
+  <!-- JavaScript -->
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>
