@@ -1,5 +1,5 @@
 import { GuidelineEntry } from '../models/GuidelineEntry';
-import { GuidelineCategory, Priority } from '../types';
+import { GuidelineCategory, Priority, GuidelineEntry as IGuidelineEntry } from '../types';
 import {
   inputValidationGuidelines,
   authenticationGuidelines,
@@ -14,6 +14,20 @@ import {
   projectOrganization,
   documentationRequirements
 } from '../content/codeQuality';
+import {
+  wcagStandards,
+  interactiveAccessibility,
+  visualAccessibility,
+  multimediaAccessibility,
+  inclusiveDesign
+} from '../content/accessibility';
+import {
+  testingStrategyGuidelines,
+  markupValidationGuidelines,
+  compatibilityTestingGuidelines,
+  deploymentValidationGuidelines,
+  automatedTestingGuidelines
+} from '../content/testing';
 
 /**
  * Query interface for retrieving guidelines
@@ -53,12 +67,31 @@ export class GuideContentManager {
     this.addGuideline(javascriptStandards);
     this.addGuideline(projectOrganization);
     this.addGuideline(documentationRequirements);
+
+    // Add accessibility guidelines
+    this.addGuideline(wcagStandards);
+    this.addGuideline(interactiveAccessibility);
+    this.addGuideline(visualAccessibility);
+    this.addGuideline(multimediaAccessibility);
+    this.addGuideline(inclusiveDesign);
+
+    // Add testing guidelines
+    this.addGuideline(testingStrategyGuidelines);
+    this.addGuideline(markupValidationGuidelines);
+    this.addGuideline(compatibilityTestingGuidelines);
+    this.addGuideline(deploymentValidationGuidelines);
+    this.addGuideline(automatedTestingGuidelines);
   }
 
   /**
    * Add a guideline to the content management system
    */
-  public addGuideline(guideline: GuidelineEntry): void {
+  public addGuideline(guidelineData: GuidelineEntry | IGuidelineEntry): void {
+    // Create GuidelineEntry instance if plain object is passed
+    const guideline = guidelineData instanceof GuidelineEntry 
+      ? guidelineData 
+      : new GuidelineEntry(guidelineData);
+      
     this.guidelines.set(guideline.id, guideline);
     
     // Update category index

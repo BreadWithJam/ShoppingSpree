@@ -1,5 +1,4 @@
-import { GuidelineEntry } from '../../models/GuidelineEntry';
-import { Rule } from '../../models/Rule';
+import { GuidelineEntry } from '../../types';
 import { CodeExample } from '../../models/CodeExample';
 
 /**
@@ -7,14 +6,14 @@ import { CodeExample } from '../../models/CodeExample';
  * Secure password handling and session management rules
  */
 
-export const authenticationGuidelines = new GuidelineEntry({
+export const authenticationGuidelines: GuidelineEntry = {
   id: 'security-authentication',
   title: 'Authentication and Authorization',
   category: 'security',
   priority: 'critical',
   description: 'Comprehensive guidelines for implementing secure authentication and authorization systems, including password handling, session management, and access control.',
   rules: [
-    new Rule({
+    {
       statement: 'Use strong password hashing with salt',
       rationale: 'Plain text or weakly hashed passwords can be easily compromised. Strong hashing with salt prevents rainbow table attacks.',
       implementation: 'Use bcrypt, scrypt, or Argon2 with appropriate cost factors. Generate unique salts for each password.',
@@ -23,9 +22,9 @@ export const authenticationGuidelines = new GuidelineEntry({
         automated: false,
         tools: ['password-hash-checker']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Implement secure session management',
       rationale: 'Insecure sessions can lead to session hijacking, fixation attacks, and unauthorized access.',
       implementation: 'Use secure, httpOnly, sameSite cookies. Implement session timeout and regenerate session IDs after login.',
@@ -34,9 +33,9 @@ export const authenticationGuidelines = new GuidelineEntry({
         automated: true,
         tools: ['session-config-checker']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Enforce strong password policies',
       rationale: 'Weak passwords are easily compromised through brute force or dictionary attacks.',
       implementation: 'Require minimum length, character complexity, and check against common password lists.',
@@ -45,9 +44,9 @@ export const authenticationGuidelines = new GuidelineEntry({
         automated: true,
         tools: ['password-policy-validator']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Implement multi-factor authentication for sensitive operations',
       rationale: 'MFA provides additional security layer beyond passwords, significantly reducing account compromise risk.',
       implementation: 'Use TOTP, SMS, or hardware tokens for critical actions like password changes or financial transactions.',
@@ -56,9 +55,9 @@ export const authenticationGuidelines = new GuidelineEntry({
         automated: false,
         tools: ['mfa-checker']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Use role-based access control (RBAC)',
       rationale: 'RBAC ensures users only access resources appropriate to their role, following principle of least privilege.',
       implementation: 'Define roles with specific permissions. Check user roles before granting access to resources or operations.',
@@ -67,9 +66,9 @@ export const authenticationGuidelines = new GuidelineEntry({
         automated: false,
         tools: ['rbac-checker']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Implement account lockout protection',
       rationale: 'Prevents brute force attacks by temporarily locking accounts after failed login attempts.',
       implementation: 'Lock accounts after 3-5 failed attempts. Use progressive delays or CAPTCHA challenges.',
@@ -78,7 +77,7 @@ export const authenticationGuidelines = new GuidelineEntry({
         automated: true,
         tools: ['lockout-mechanism-checker']
       }
-    })
+    }
   ],
   examples: [
     new CodeExample({
@@ -311,4 +310,4 @@ async function attemptLogin(username, password) {
     'security-data-protection',
     'security-server-configuration'
   ]
-});
+};

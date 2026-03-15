@@ -1,0 +1,492 @@
+import { GuidelineEntry } from '../../types';
+
+export const documentationRequirements: GuidelineEntry = {
+  id: 'documentation-requirements',
+  title: 'Documentation Requirements',
+  category: 'code-quality',
+  priority: 'critical',
+  description: 'Comment and documentation standards for creating maintainable, understandable code with comprehensive documentation.',
+  rules: [
+    {
+      statement: 'Write clear, concise comments that explain why, not what',
+      rationale: 'Good comments explain the reasoning behind code decisions, making maintenance and debugging easier',
+      implementation: 'Focus on business logic, complex algorithms, and non-obvious decisions. Avoid comments that simply restate the code',
+      validation: {
+        method: 'Code review and documentation quality assessment'
+      }
+    },
+    {
+      statement: 'Use JSDoc or TypeScript documentation for all public APIs',
+      rationale: 'Structured documentation enables IDE support, generates documentation, and helps other developers understand interfaces',
+      implementation: 'Document all public functions, classes, and modules with parameter types, return values, and usage examples',
+      validation: {
+        method: 'Documentation generation and API review'
+      }
+    },
+    {
+      statement: 'Maintain up-to-date README files with clear setup and usage instructions',
+      rationale: 'README files are the first point of contact for developers and should provide all necessary information to get started',
+      implementation: 'Include project description, installation steps, usage examples, API documentation, and contribution guidelines',
+      validation: {
+        method: 'Documentation review and new developer onboarding testing'
+      }
+    },
+    {
+      statement: 'Document complex business logic and algorithms with inline comments',
+      rationale: 'Complex logic requires explanation to prevent bugs during maintenance and help future developers understand the implementation',
+      implementation: 'Add comments before complex functions, explain algorithm steps, document edge cases and assumptions',
+      validation: {
+        method: 'Code review focusing on business logic documentation'
+      }
+    },
+    {
+      statement: 'Keep documentation synchronized with code changes',
+      rationale: 'Outdated documentation is worse than no documentation as it misleads developers',
+      implementation: 'Update documentation as part of code changes, use automated tools to detect documentation drift, include documentation updates in code reviews',
+      validation: {
+        method: 'Regular documentation audits and automated checking'
+      }
+    }
+  ],
+  examples: [
+    {
+      language: 'typescript',
+      title: 'JSDoc Documentation for APIs',
+      goodExample: `/**
+ * User management service for handling user operations
+ * Provides methods for creating, updating, and retrieving user data
+ * with proper validation and error handling.
+ */
+export class UserService {
+  private readonly apiClient: ApiClient;
+  private readonly cache: Map<string, User> = new Map();
+
+  constructor(apiClient: ApiClient) {
+    this.apiClient = apiClient;
+  }
+
+  /**
+   * Retrieves a user by their unique identifier
+   * 
+   * @param userId - The unique identifier for the user
+   * @param options - Optional configuration for the request
+   * @param options.useCache - Whether to use cached data if available (default: true)
+   * @param options.timeout - Request timeout in milliseconds (default: 5000)
+   * @returns Promise that resolves to the user data
+   * 
+   * @throws {ValidationError} When userId is invalid
+   * @throws {NotFoundError} When user doesn't exist
+   * @throws {NetworkError} When request fails
+   * 
+   * @example
+   * ```typescript
+   * const userService = new UserService(apiClient);
+   * 
+   * try {
+   *   const user = await userService.getUserById('user-123');
+   *   console.log(user.name);
+   * } catch (error) {
+   *   if (error instanceof NotFoundError) {
+   *     console.log('User not found');
+   *   }
+   * }
+   * ```
+   */
+  async getUserById(
+    userId: string, 
+    options: { useCache?: boolean; timeout?: number } = {}
+  ): Promise<User> {
+    const { useCache = true, timeout = 5000 } = options;
+
+    // Validate input - user ID must be a non-empty string
+    if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+      throw new ValidationError('User ID must be a non-empty string');
+    }
+
+    // Check cache first if enabled - improves performance for repeated requests
+    if (useCache && this.cache.has(userId)) {
+      return this.cache.get(userId)!;
+    }
+
+    try {
+      const response = await this.apiClient.get(\`/users/\${userId}\`, { timeout });
+      
+      if (!response.ok) {
+        // Handle different HTTP status codes appropriately
+        if (response.status === 404) {
+          throw new NotFoundError(\`User with ID \${userId} not found\`);
+        }
+        throw new NetworkError(\`Failed to fetch user: \${response.status}\`);
+      }
+
+      const userData = await response.json();
+      
+      // Validate response structure before returning
+      if (!this.isValidUserData(userData)) {
+        throw new ValidationError('Invalid user data received from API');
+      }
+
+      // Cache successful results for future requests
+      if (useCache) {
+        this.cache.set(userId, userData);
+      }
+
+      return userData;
+      
+    } catch (error) {
+      // Re-throw known errors, wrap unknown errors
+      if (error instanceof ValidationError || 
+          error instanceof NotFoundError || 
+          error instanceof NetworkError) {
+        throw error;
+      }
+      
+      throw new NetworkError(\`Unexpected error fetching user: \${error.message}\`);
+    }
+  }
+
+  /**
+   * Validates user data structure
+   * 
+   * @private
+   * @param userData - The user data to validate
+   * @returns True if the user data is valid, false otherwise
+   */
+  private isValidUserData(userData: any): userData is User {
+    return userData && 
+           typeof userData.id === 'string' && 
+           typeof userData.name === 'string' &&
+           typeof userData.email === 'string' &&
+           userData.id.length > 0 &&
+           userData.name.length > 0 &&
+           userData.email.includes('@');
+  }
+}`,
+      badExample: `// Poor documentation - minimal and unhelpful comments
+export class UserService {
+  private apiClient: ApiClient;
+  private cache: Map<string, User> = new Map();
+
+  constructor(apiClient: ApiClient) {
+    this.apiClient = apiClient;
+  }
+
+  // Get user
+  async getUserById(userId: string, options: any = {}): Promise<User> {
+    // Check if userId exists
+    if (!userId) {
+      throw new Error('Invalid user ID');
+    }
+
+    // Look in cache
+    if (this.cache.has(userId)) {
+      return this.cache.get(userId)!;
+    }
+
+    // Make API call
+    const response = await this.apiClient.get('/users/' + userId);
+    
+    // Check response
+    if (!response.ok) {
+      throw new Error('Failed to fetch user');
+    }
+
+    const userData = await response.json();
+    
+    // Save to cache
+    this.cache.set(userId, userData);
+
+    return userData;
+  }
+
+  // Check if user data is valid
+  private isValidUserData(userData: any): boolean {
+    return userData && userData.id && userData.name && userData.email;
+  }
+}`,
+      explanation: 'The good example provides comprehensive JSDoc documentation with parameter descriptions, return types, error conditions, and usage examples, while the bad example has minimal, unhelpful comments.'
+    },
+    {
+      language: 'typescript',
+      title: 'Complex Algorithm Documentation',
+      goodExample: `/**
+ * Implements a debounced search function using a sliding window approach
+ * This prevents excessive API calls while the user is typing by waiting
+ * for a pause in input before executing the search.
+ */
+export class SearchService {
+  private searchTimeout: NodeJS.Timeout | null = null;
+  private readonly debounceMs: number;
+
+  constructor(debounceMs: number = 300) {
+    this.debounceMs = debounceMs;
+  }
+
+  /**
+   * Performs a debounced search operation
+   * 
+   * The debouncing algorithm works as follows:
+   * 1. Cancel any pending search from previous calls
+   * 2. Set a new timer for the debounce delay
+   * 3. When timer expires, execute the actual search
+   * 
+   * This ensures that rapid successive calls (like user typing) only
+   * result in one API call after the user stops typing.
+   */
+  async debouncedSearch(
+    query: string, 
+    searchFn: (query: string) => Promise<SearchResult[]>
+  ): Promise<void> {
+    // Clear any existing timeout to reset the debounce timer
+    // This is the key to the sliding window - each new call
+    // cancels the previous one, effectively extending the wait time
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+
+    // Don't search for empty or very short queries to avoid noise
+    // Most search APIs perform poorly with single characters
+    if (!query || query.trim().length < 2) {
+      return;
+    }
+
+    // Set up the debounced execution
+    // The search will only execute if no new calls come in
+    // within the debounce window
+    this.searchTimeout = setTimeout(async () => {
+      try {
+        // Execute the actual search function
+        const results = await searchFn(query.trim());
+        
+        // Emit results to subscribers (implementation depends on event system)
+        this.emitSearchResults(query, results);
+        
+      } catch (error) {
+        // Handle search errors gracefully
+        console.error('Search failed:', error);
+        this.emitSearchError(query, error);
+        
+      } finally {
+        // Clean up the timeout reference
+        this.searchTimeout = null;
+      }
+    }, this.debounceMs);
+  }
+
+  /**
+   * Cancels any pending search operation
+   * Useful when component unmounts or search context changes
+   */
+  cancelPendingSearch(): void {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+  }
+
+  private emitSearchResults(query: string, results: SearchResult[]): void {
+    // Implementation would depend on your event system
+    // Could be EventEmitter, RxJS Subject, or callback-based
+  }
+
+  private emitSearchError(query: string, error: Error): void {
+    // Error handling implementation
+  }
+}
+
+/**
+ * Advanced search with caching and request deduplication
+ * 
+ * This implementation adds several optimizations:
+ * - LRU cache to avoid repeated identical searches
+ * - Request deduplication to prevent multiple identical concurrent requests
+ * - Exponential backoff for failed requests
+ */
+export class AdvancedSearchService extends SearchService {
+  private readonly cache = new Map<string, CacheEntry>();
+  private readonly pendingRequests = new Map<string, Promise<SearchResult[]>>();
+  private readonly maxCacheSize = 100;
+  private readonly cacheExpiryMs = 5 * 60 * 1000; // 5 minutes
+
+  async search(query: string): Promise<SearchResult[]> {
+    const normalizedQuery = query.trim().toLowerCase();
+    
+    // Check cache first - O(1) lookup
+    const cached = this.getCachedResult(normalizedQuery);
+    if (cached) {
+      return cached;
+    }
+
+    // Check if we already have a pending request for this query
+    // This prevents duplicate API calls for the same search term
+    if (this.pendingRequests.has(normalizedQuery)) {
+      return this.pendingRequests.get(normalizedQuery)!;
+    }
+
+    // Create new search request with exponential backoff retry logic
+    const searchPromise = this.executeSearchWithRetry(normalizedQuery);
+    
+    // Store the promise to enable request deduplication
+    this.pendingRequests.set(normalizedQuery, searchPromise);
+
+    try {
+      const results = await searchPromise;
+      
+      // Cache successful results
+      this.cacheResult(normalizedQuery, results);
+      
+      return results;
+      
+    } finally {
+      // Clean up pending request tracking
+      this.pendingRequests.delete(normalizedQuery);
+    }
+  }
+
+  private getCachedResult(query: string): SearchResult[] | null {
+    const entry = this.cache.get(query);
+    
+    if (!entry) {
+      return null;
+    }
+
+    // Check if cache entry has expired
+    if (Date.now() - entry.timestamp > this.cacheExpiryMs) {
+      this.cache.delete(query);
+      return null;
+    }
+
+    // Move to end for LRU behavior (most recently used)
+    this.cache.delete(query);
+    this.cache.set(query, entry);
+    
+    return entry.results;
+  }
+
+  private cacheResult(query: string, results: SearchResult[]): void {
+    // Implement LRU eviction if cache is full
+    if (this.cache.size >= this.maxCacheSize) {
+      // Remove oldest entry (first in Map iteration order)
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+
+    this.cache.set(query, {
+      results,
+      timestamp: Date.now()
+    });
+  }
+
+  private async executeSearchWithRetry(
+    query: string, 
+    attempt: number = 1
+  ): Promise<SearchResult[]> {
+    const maxAttempts = 3;
+    const baseDelayMs = 1000;
+
+    try {
+      return await this.apiClient.search(query);
+      
+    } catch (error) {
+      // Don't retry on client errors (4xx) - only server errors (5xx)
+      if (attempt >= maxAttempts || this.isClientError(error)) {
+        throw error;
+      }
+
+      // Exponential backoff: 1s, 2s, 4s delays
+      const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
+      await this.delay(delayMs);
+      
+      return this.executeSearchWithRetry(query, attempt + 1);
+    }
+  }
+
+  private isClientError(error: any): boolean {
+    return error.status >= 400 && error.status < 500;
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+}
+
+interface CacheEntry {
+  results: SearchResult[];
+  timestamp: number;
+}`,
+      badExample: `// Poor documentation for complex logic
+export class SearchService {
+  private searchTimeout: any;
+  private debounceMs: number;
+
+  constructor(debounceMs: number = 300) {
+    this.debounceMs = debounceMs;
+  }
+
+  // Search with debounce
+  async debouncedSearch(query: string, searchFn: any): Promise<void> {
+    // Clear timeout
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+
+    // Check query
+    if (!query || query.length < 2) {
+      return;
+    }
+
+    // Set timeout
+    this.searchTimeout = setTimeout(async () => {
+      try {
+        const results = await searchFn(query);
+        this.emitResults(results);
+      } catch (error) {
+        console.error(error);
+      }
+    }, this.debounceMs);
+  }
+
+  // Cancel search
+  cancelSearch(): void {
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout);
+    }
+  }
+}
+
+// Advanced search with cache
+export class AdvancedSearchService extends SearchService {
+  private cache = new Map();
+  private pending = new Map();
+
+  async search(query: string): Promise<any> {
+    query = query.trim().toLowerCase();
+    
+    // Check cache
+    const cached = this.cache.get(query);
+    if (cached && Date.now() - cached.time < 300000) {
+      return cached.data;
+    }
+
+    // Check pending
+    if (this.pending.has(query)) {
+      return this.pending.get(query);
+    }
+
+    // Make request
+    const promise = this.makeRequest(query);
+    this.pending.set(query, promise);
+
+    const results = await promise;
+    this.cache.set(query, { data: results, time: Date.now() });
+    this.pending.delete(query);
+    
+    return results;
+  }
+}`,
+      explanation: 'The good example thoroughly documents complex algorithms with step-by-step explanations, rationale for design decisions, and implementation details, while the bad example provides minimal context for complex logic.'
+    }
+  ],
+  relatedGuidelines: ['javascript-standards', 'project-organization']
+};

@@ -1,4 +1,4 @@
-import { GuidelineEntry, Rule, CodeExample } from '../../models';
+import { GuidelineEntry } from '../../types';
 
 export const cssOrganization: GuidelineEntry = {
   id: 'css-organization',

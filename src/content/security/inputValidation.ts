@@ -1,5 +1,4 @@
-import { GuidelineEntry } from '../../models/GuidelineEntry';
-import { Rule } from '../../models/Rule';
+import { GuidelineEntry } from '../../types';
 import { CodeExample } from '../../models/CodeExample';
 
 /**
@@ -7,14 +6,14 @@ import { CodeExample } from '../../models/CodeExample';
  * Comprehensive rules for input validation across different contexts
  */
 
-export const inputValidationGuidelines = new GuidelineEntry({
+export const inputValidationGuidelines: GuidelineEntry = {
   id: 'security-input-validation',
   title: 'Input Validation and Sanitization',
   category: 'security',
   priority: 'critical',
   description: 'Comprehensive guidelines for validating and sanitizing user input to prevent security vulnerabilities including injection attacks, XSS, and data corruption.',
   rules: [
-    new Rule({
+    {
       statement: 'All user input must be validated on both client and server sides',
       rationale: 'Client-side validation can be bypassed, so server-side validation is essential for security. Client-side validation improves user experience.',
       implementation: 'Implement validation functions that check input format, length, type, and allowed characters before processing.',
@@ -23,9 +22,9 @@ export const inputValidationGuidelines = new GuidelineEntry({
         automated: true,
         tools: ['validation-functions-checker']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Use whitelist validation instead of blacklist validation',
       rationale: 'Whitelisting defines what is allowed, making it harder for attackers to find bypasses compared to blacklisting what is forbidden.',
       implementation: 'Define allowed characters, patterns, and formats explicitly. Reject anything that does not match the whitelist.',
@@ -34,9 +33,9 @@ export const inputValidationGuidelines = new GuidelineEntry({
         automated: false,
         tools: ['manual-review']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Sanitize input data before storage or display',
       rationale: 'Sanitization removes or encodes potentially dangerous characters to prevent injection attacks and XSS.',
       implementation: 'Use established sanitization libraries and encode output based on context (HTML, URL, JavaScript, SQL).',
@@ -45,9 +44,9 @@ export const inputValidationGuidelines = new GuidelineEntry({
         automated: true,
         tools: ['sanitization-checker']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Validate input length and size limits',
       rationale: 'Prevents buffer overflow attacks, denial of service through large payloads, and ensures data fits storage constraints.',
       implementation: 'Set maximum length limits for all input fields and validate file upload sizes.',
@@ -56,9 +55,9 @@ export const inputValidationGuidelines = new GuidelineEntry({
         automated: true,
         tools: ['length-validator']
       }
-    }),
+    },
 
-    new Rule({
+    {
       statement: 'Use parameterized queries for database operations',
       rationale: 'Parameterized queries prevent SQL injection by separating SQL code from data.',
       implementation: 'Use prepared statements or ORM methods that automatically handle parameter binding.',
@@ -67,10 +66,10 @@ export const inputValidationGuidelines = new GuidelineEntry({
         automated: true,
         tools: ['sql-injection-scanner']
       }
-    })
+    }
   ],
   examples: [
-    new CodeExample({
+    {
       language: 'javascript',
       title: 'Client-side Input Validation',
       goodExample: `// Good: Comprehensive validation with whitelist approach
@@ -100,9 +99,9 @@ function validateEmail(email) {
   return false;
 }`,
       explanation: 'The good example uses whitelist validation with regex, checks data type, enforces length limits, and provides meaningful error messages. The bad example only checks for @ symbol presence.'
-    }),
+    },
 
-    new CodeExample({
+    {
       language: 'javascript',
       title: 'HTML Sanitization for XSS Prevention',
       goodExample: `// Good: Proper HTML sanitization
@@ -127,9 +126,9 @@ function displayUserContent(userInput) {
   document.getElementById('content').innerHTML = userInput; // XSS vulnerability
 }`,
       explanation: 'The good example uses a trusted sanitization library with strict configuration to remove dangerous elements while preserving safe content. The bad example directly inserts user input into DOM.'
-    }),
+    },
 
-    new CodeExample({
+    {
       language: 'javascript',
       title: 'Parameterized Database Queries',
       goodExample: `// Good: Parameterized query prevents SQL injection
@@ -152,9 +151,9 @@ async function getUserById(userId) {
   return result;
 }`,
       explanation: 'The good examples use parameterized queries that separate SQL code from data, preventing injection attacks. The bad example concatenates user input directly into the SQL string.'
-    }),
+    },
 
-    new CodeExample({
+    {
       language: 'javascript',
       title: 'File Upload Validation',
       goodExample: `// Good: Comprehensive file upload validation
@@ -191,11 +190,11 @@ function validateFileUpload(file) {
   return file.name.endsWith('.jpg') || file.name.endsWith('.png');
 }`,
       explanation: 'The good example validates multiple aspects: file size, MIME type, and extension using whitelists. The bad example only checks extension, which can be easily spoofed.'
-    })
+    }
   ],
   relatedGuidelines: [
     'security-authentication',
     'security-data-protection',
     'security-owasp-prevention'
   ]
-});
+};
