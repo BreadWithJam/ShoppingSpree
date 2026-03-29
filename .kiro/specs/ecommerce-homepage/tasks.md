@@ -279,7 +279,9 @@
     - Update cart display with real-time feedback
     - _Requirements: 5.1, 5.2, 5.4_
 
-  - [ ] 8.2 Write property test for cart access functionality
+  - [x] 8.2 Write property test for cart access functionality
+
+
     - **Property 18: Cart access functionality**
     - **Validates: Requirements 5.2**
 

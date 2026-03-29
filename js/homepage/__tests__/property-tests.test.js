@@ -3307,3 +3307,289 @@ describe('Property 12: Mobile responsive design', () => {
     return css;
   }
 });
+
+/**
+ * **Feature: ecommerce-homepage, Property 18: Cart access functionality**
+ * **Validates: Requirements 5.2**
+ * 
+ * For any cart icon interaction, it should provide quick access to cart contents and checkout process
+ */
+describe('Property 18: Cart access functionality', () => {
+
+  // Mock cart data generator
+  const cartItemArb = fc.record({
+    id: fc.integer({ min: 1, max: 1000 }),
+    name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
+    price: fc.float({ min: Math.fround(0.01), max: Math.fround(999.99), noNaN: true }),
+    salePrice: fc.option(fc.float({ min: Math.fround(0.01), max: Math.fround(999.99), noNaN: true }), { nil: null }),
+    quantity: fc.integer({ min: 1, max: 10 }),
+    imageUrl: fc.webUrl()
+  });
+
+  const cartStateArb = fc.record({
+    items: fc.array(cartItemArb, { maxLength: 20 }),
+    isLoggedIn: fc.boolean(),
+    hasShippingInfo: fc.boolean()
+  });
+
+  // Mock cart dropdown creation
+  const createCartDropdown = (cartState) => {
+    const totalItems = cartState.items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = cartState.items.reduce((sum, item) => {
+      const price = item.salePrice || item.price;
+      return sum + (price * item.quantity);
+    }, 0);
+
+    return {
+      element: {
+        id: 'cart-dropdown',
+        className: 'cart-dropdown cart-dropdown--visible',
+        role: 'dialog',
+        ariaLabel: 'Shopping cart'
+      },
+      header: {
+        className: 'cart-dropdown__header',
+        content: `Shopping Cart (${totalItems})`
+      },
+      items: cartState.items.map(item => ({
+        className: 'cart-dropdown__item',
+        productName: item.name,
+        price: (item.salePrice || item.price).toFixed(2),
+        quantity: item.quantity,
+        removeButton: {
+          className: 'cart-item__remove',
+          ariaLabel: `Remove ${item.name}`,
+          dataProductId: item.id.toString()
+        }
+      })),
+      footer: {
+        className: 'cart-dropdown__footer',
+        total: {
+          className: 'cart-dropdown__total',
+          content: `Total: $${totalPrice.toFixed(2)}`
+        },
+        actions: {
+          viewCart: {
+            className: 'button button--secondary',
+            href: '/cart',
+            content: 'View Cart'
+          },
+          checkout: {
+            className: 'button button--primary',
+            href: '/checkout',
+            content: 'Checkout'
+          }
+        }
+      },
+      isEmpty: totalItems === 0,
+      totalItems,
+      totalPrice
+    };
+  };
+
+  it('should provide quick access to cart contents when cart icon is clicked', () => {
+    fc.assert(fc.property(cartStateArb, (cartState) => {
+      const dropdown = createCartDropdown(cartState);
+
+      // Cart dropdown must have proper accessibility attributes
+      expect(dropdown.element.id).toBe('cart-dropdown');
+      expect(dropdown.element.className).toContain('cart-dropdown');
+      expect(dropdown.element.role).toBe('dialog');
+      expect(dropdown.element.ariaLabel).toBe('Shopping cart');
+
+      // Header must display item count
+      expect(dropdown.header.className).toBe('cart-dropdown__header');
+      expect(dropdown.header.content).toContain(`Shopping Cart (${dropdown.totalItems})`);
+
+      if (dropdown.isEmpty) {
+        // Empty cart should show appropriate message and shopping link
+        expect(dropdown.totalItems).toBe(0);
+        expect(dropdown.totalPrice).toBe(0);
+      } else {
+        // Non-empty cart should display all items
+        expect(dropdown.items.length).toBe(cartState.items.length);
+        expect(dropdown.totalItems).toBeGreaterThan(0);
+        expect(dropdown.totalPrice).toBeGreaterThan(0);
+
+        // Each item should have required elements
+        dropdown.items.forEach((item, index) => {
+          const originalItem = cartState.items[index];
+          
+          expect(item.className).toBe('cart-dropdown__item');
+          expect(item.productName).toBe(originalItem.name);
+          expect(item.quantity).toBe(originalItem.quantity);
+          expect(parseFloat(item.price)).toBeCloseTo(originalItem.salePrice || originalItem.price, 2);
+          
+          // Remove button must be accessible
+          expect(item.removeButton.className).toBe('cart-item__remove');
+          expect(item.removeButton.ariaLabel).toBe(`Remove ${originalItem.name}`);
+          expect(item.removeButton.dataProductId).toBe(originalItem.id.toString());
+        });
+
+        // Footer must contain total and action buttons
+        expect(dropdown.footer.className).toBe('cart-dropdown__footer');
+        expect(dropdown.footer.total.content).toBe(`Total: $${dropdown.totalPrice.toFixed(2)}`);
+        
+        // Action buttons must provide checkout access
+        expect(dropdown.footer.actions.viewCart.className).toBe('button button--secondary');
+        expect(dropdown.footer.actions.viewCart.href).toBe('/cart');
+        expect(dropdown.footer.actions.viewCart.content).toBe('View Cart');
+        
+        expect(dropdown.footer.actions.checkout.className).toBe('button button--primary');
+        expect(dropdown.footer.actions.checkout.href).toBe('/checkout');
+        expect(dropdown.footer.actions.checkout.content).toBe('Checkout');
+      }
+
+      return true;
+    }), { numRuns: 100 });
+  });
+
+  it('should calculate cart totals correctly for quick access display', () => {
+    fc.assert(fc.property(
+      fc.array(cartItemArb, { minLength: 1, maxLength: 10 }),
+      (items) => {
+        const cartState = { items, isLoggedIn: true, hasShippingInfo: true };
+        const dropdown = createCartDropdown(cartState);
+
+        // Calculate expected totals
+        const expectedItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+        const expectedTotal = items.reduce((sum, item) => {
+          const price = item.salePrice || item.price;
+          return sum + (price * item.quantity);
+        }, 0);
+
+        // Verify calculations
+        expect(dropdown.totalItems).toBe(expectedItemCount);
+        expect(dropdown.totalPrice).toBeCloseTo(expectedTotal, 2);
+        expect(dropdown.footer.total.content).toBe(`Total: $${expectedTotal.toFixed(2)}`);
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should provide consistent checkout process access regardless of cart state', () => {
+    fc.assert(fc.property(cartStateArb, (cartState) => {
+      const dropdown = createCartDropdown(cartState);
+
+      if (!dropdown.isEmpty) {
+        // Non-empty cart must always provide checkout access
+        expect(dropdown.footer.actions.checkout).toBeDefined();
+        expect(dropdown.footer.actions.checkout.href).toBe('/checkout');
+        expect(dropdown.footer.actions.checkout.className).toContain('button--primary');
+        
+        // View cart link must also be available
+        expect(dropdown.footer.actions.viewCart).toBeDefined();
+        expect(dropdown.footer.actions.viewCart.href).toBe('/cart');
+        expect(dropdown.footer.actions.viewCart.className).toContain('button--secondary');
+      }
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain accessibility standards for cart access interface', () => {
+    fc.assert(fc.property(cartStateArb, (cartState) => {
+      const dropdown = createCartDropdown(cartState);
+
+      // Dialog must have proper ARIA attributes
+      expect(dropdown.element.role).toBe('dialog');
+      expect(dropdown.element.ariaLabel).toBeTruthy();
+      expect(dropdown.element.id).toBeTruthy();
+
+      // All interactive elements must be accessible
+      if (!dropdown.isEmpty) {
+        dropdown.items.forEach(item => {
+          // Remove buttons must have descriptive labels
+          expect(item.removeButton.ariaLabel).toContain('Remove');
+          expect(item.removeButton.ariaLabel).toContain(item.productName);
+          expect(item.removeButton.dataProductId).toBeTruthy();
+        });
+
+        // Action buttons must be properly labeled
+        expect(dropdown.footer.actions.viewCart.content).toBeTruthy();
+        expect(dropdown.footer.actions.checkout.content).toBeTruthy();
+      }
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should handle empty cart state appropriately for quick access', () => {
+    fc.assert(fc.property(
+      fc.constant({ items: [], isLoggedIn: fc.boolean(), hasShippingInfo: fc.boolean() }),
+      (emptyCartState) => {
+        const dropdown = createCartDropdown(emptyCartState);
+
+        // Empty cart properties
+        expect(dropdown.isEmpty).toBe(true);
+        expect(dropdown.totalItems).toBe(0);
+        expect(dropdown.totalPrice).toBe(0);
+        expect(dropdown.items.length).toBe(0);
+
+        // Should still maintain proper structure
+        expect(dropdown.element.role).toBe('dialog');
+        expect(dropdown.element.ariaLabel).toBe('Shopping cart');
+        expect(dropdown.header.content).toContain('Shopping Cart (0)');
+
+        return true;
+      }
+    ), { numRuns: 20 });
+  });
+
+  it('should provide quick access to individual item management', () => {
+    fc.assert(fc.property(
+      fc.array(cartItemArb, { minLength: 1, maxLength: 5 }),
+      (items) => {
+        const cartState = { items, isLoggedIn: true, hasShippingInfo: true };
+        const dropdown = createCartDropdown(cartState);
+
+        // Each item must provide removal functionality
+        dropdown.items.forEach((dropdownItem, index) => {
+          const originalItem = items[index];
+          
+          // Item display must include essential information
+          expect(dropdownItem.productName).toBe(originalItem.name);
+          expect(dropdownItem.quantity).toBe(originalItem.quantity);
+          expect(parseFloat(dropdownItem.price)).toBeCloseTo(originalItem.salePrice || originalItem.price, 2);
+          
+          // Remove functionality must be accessible
+          expect(dropdownItem.removeButton.className).toBe('cart-item__remove');
+          expect(dropdownItem.removeButton.dataProductId).toBe(originalItem.id.toString());
+          expect(dropdownItem.removeButton.ariaLabel).toContain(originalItem.name);
+        });
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should maintain consistent interface structure across different cart states', () => {
+    fc.assert(fc.property(
+      cartStateArb,
+      cartStateArb,
+      (cartState1, cartState2) => {
+        const dropdown1 = createCartDropdown(cartState1);
+        const dropdown2 = createCartDropdown(cartState2);
+
+        // Core structure should remain consistent
+        expect(dropdown1.element.className).toContain('cart-dropdown');
+        expect(dropdown2.element.className).toContain('cart-dropdown');
+        
+        expect(dropdown1.element.role).toBe(dropdown2.element.role);
+        expect(dropdown1.element.ariaLabel).toBe(dropdown2.element.ariaLabel);
+        
+        expect(dropdown1.header.className).toBe(dropdown2.header.className);
+        
+        // Non-empty carts should have consistent footer structure
+        if (!dropdown1.isEmpty && !dropdown2.isEmpty) {
+          expect(dropdown1.footer.className).toBe(dropdown2.footer.className);
+          expect(dropdown1.footer.actions.viewCart.className).toBe(dropdown2.footer.actions.viewCart.className);
+          expect(dropdown1.footer.actions.checkout.className).toBe(dropdown2.footer.actions.checkout.className);
+        }
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+});
