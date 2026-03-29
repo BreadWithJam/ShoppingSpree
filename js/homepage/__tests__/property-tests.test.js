@@ -2162,3 +2162,1148 @@ describe('Property 11: Touch target accessibility', () => {
     return js;
   }
 });
+
+/**
+ * **Feature: ecommerce-homepage, Property 16: Progressive enhancement**
+ * **Validates: Requirements 4.5**
+ * 
+ * For any JavaScript functionality on the homepage, core functionality 
+ * should remain available when JavaScript is disabled
+ */
+describe('Property 16: Progressive enhancement', () => {
+
+  // Arbitrary for generating progressive enhancement scenarios
+  const enhancementArb = fc.record({
+    featureType: fc.constantFrom('navigation', 'search', 'cart', 'product-interaction'),
+    hasJavaScript: fc.boolean(),
+    hasModernCSS: fc.boolean(),
+    browserSupport: fc.record({
+      grid: fc.boolean(),
+      flexbox: fc.boolean(),
+      customProperties: fc.boolean(),
+      clamp: fc.boolean()
+    }),
+    deviceType: fc.constantFrom('mobile', 'tablet', 'desktop')
+  });
+
+  it('should provide core functionality without JavaScript', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const coreHTML = generateCoreHTML(enhancementData);
+
+      // Core functionality should always be available
+      if (enhancementData.featureType === 'navigation') {
+        // Navigation should be accessible without JavaScript
+        expect(coreHTML).toMatch(/<nav[^>]*>/);
+        expect(coreHTML).toMatch(/<ul[^>]*class="nav-menu"[^>]*>/);
+        expect(coreHTML).toMatch(/<a[^>]*href="[^"]*"[^>]*>/);
+        
+        // Links should be functional without JavaScript
+        expect(coreHTML).not.toContain('javascript:');
+        expect(coreHTML).not.toContain('onclick=');
+      }
+
+      if (enhancementData.featureType === 'search') {
+        // Search form should work without JavaScript
+        expect(coreHTML).toMatch(/<form[^>]*>/);
+        expect(coreHTML).toMatch(/<input[^>]*type="search"[^>]*>/);
+        expect(coreHTML).toMatch(/<button[^>]*type="submit"[^>]*>/);
+      }
+
+      if (enhancementData.featureType === 'cart') {
+        // Cart should be accessible as a link without JavaScript
+        expect(coreHTML).toMatch(/<a[^>]*href="[^"]*cart[^"]*"[^>]*>/);
+      }
+
+      if (enhancementData.featureType === 'product-interaction') {
+        // Product links should work without JavaScript
+        expect(coreHTML).toMatch(/<a[^>]*href="[^"]*product[^"]*"[^>]*>/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should enhance functionality when JavaScript is available', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const enhancedHTML = generateEnhancedHTML(enhancementData);
+
+      if (enhancementData.hasJavaScript) {
+        // Should have JavaScript enhancement classes
+        expect(enhancedHTML).toContain('js-enabled');
+        
+        if (enhancementData.featureType === 'navigation') {
+          // Should have enhanced navigation features
+          expect(enhancedHTML).toMatch(/class="[^"]*nav-toggle[^"]*"/);
+          expect(enhancedHTML).toMatch(/aria-expanded="false"/);
+        }
+
+        if (enhancementData.featureType === 'search') {
+          // Should have enhanced search features
+          expect(enhancedHTML).toMatch(/class="[^"]*search-suggestions[^"]*"/);
+          expect(enhancedHTML).toMatch(/role="listbox"/);
+        }
+
+        if (enhancementData.featureType === 'cart') {
+          // Should have enhanced cart features
+          expect(enhancedHTML).toMatch(/<button[^>]*class="[^"]*cart-button[^"]*"/);
+          expect(enhancedHTML).toMatch(/aria-live="polite"/);
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should provide CSS fallbacks for unsupported features', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const fallbackCSS = generateFallbackCSS(enhancementData);
+
+      // Should have fallbacks for CSS Grid
+      if (!enhancementData.browserSupport.grid) {
+        expect(fallbackCSS).toMatch(/\.no-grid\s+\.product-grid\s*\{[^}]*display:\s*flex/);
+        expect(fallbackCSS).toMatch(/flex-wrap:\s*wrap/);
+      }
+
+      // Should have fallbacks for custom properties
+      if (!enhancementData.browserSupport.customProperties) {
+        expect(fallbackCSS).toMatch(/\.no-customProperties\s+\.button--primary\s*\{[^}]*background-color:\s*#e94560/);
+      }
+
+      // Should have fallbacks for clamp()
+      if (!enhancementData.browserSupport.clamp) {
+        expect(fallbackCSS).toMatch(/\.no-clamp\s+\.hero-section__title\s*\{[^}]*font-size:\s*2rem/);
+      }
+
+      // Should have flexbox fallbacks when grid is not supported
+      if (!enhancementData.browserSupport.grid && enhancementData.browserSupport.flexbox) {
+        expect(fallbackCSS).toMatch(/display:\s*flex/);
+        expect(fallbackCSS).toMatch(/flex:\s*[0-9]/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should adapt layout based on device capabilities', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const deviceCSS = generateDeviceCSS(enhancementData);
+
+      if (enhancementData.deviceType === 'mobile') {
+        // Mobile should have touch-friendly enhancements
+        expect(deviceCSS).toMatch(/min-height:\s*44px/);
+        expect(deviceCSS).toMatch(/min-width:\s*44px/);
+        
+        // Should have mobile-first approach
+        expect(deviceCSS).toMatch(/grid-template-columns:\s*1fr/);
+      }
+
+      if (enhancementData.deviceType === 'tablet') {
+        // Tablet should have intermediate layouts
+        expect(deviceCSS).toMatch(/@media\s*\(\s*min-width:\s*768px\s*\)/);
+      }
+
+      if (enhancementData.deviceType === 'desktop') {
+        // Desktop should have enhanced layouts
+        expect(deviceCSS).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
+        expect(deviceCSS).toMatch(/grid-template-columns:\s*repeat\(/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should maintain accessibility across enhancement levels', () => {
+    const accessibilityArb = fc.record({
+      featureType: fc.constantFrom('navigation', 'search', 'cart'),
+      hasJavaScript: fc.boolean(),
+      hasScreenReader: fc.boolean(),
+      hasKeyboardOnly: fc.boolean()
+    });
+
+    fc.assert(fc.property(accessibilityArb, (accessibilityData) => {
+      const accessibleHTML = generateAccessibleHTML(accessibilityData);
+
+      // Should always have proper ARIA attributes
+      expect(accessibleHTML).toMatch(/aria-label="[^"]+"/);
+
+      if (accessibilityData.featureType === 'navigation') {
+        expect(accessibleHTML).toMatch(/role="navigation"/);
+        expect(accessibilityData.hasJavaScript ? 
+          accessibleHTML.includes('aria-expanded') : 
+          !accessibleHTML.includes('aria-expanded')
+        ).toBe(true);
+      }
+
+      if (accessibilityData.featureType === 'search') {
+        expect(accessibleHTML).toMatch(/role="search"/);
+        if (accessibilityData.hasJavaScript) {
+          expect(accessibleHTML).toMatch(/aria-describedby="[^"]+"/);
+        }
+      }
+
+      if (accessibilityData.featureType === 'cart') {
+        expect(accessibleHTML).toMatch(/aria-live="polite"/);
+      }
+
+      // Should have keyboard navigation support
+      if (accessibilityData.hasKeyboardOnly) {
+        expect(accessibleHTML).toMatch(/tabindex="[0-9-]+"/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should gracefully degrade for older browsers', () => {
+    const browserArb = fc.record({
+      browserType: fc.constantFrom('modern', 'legacy', 'minimal'),
+      supportLevel: fc.record({
+        es6: fc.boolean(),
+        cssGrid: fc.boolean(),
+        flexbox: fc.boolean(),
+        customProperties: fc.boolean()
+      })
+    });
+
+    fc.assert(fc.property(browserArb, (browserData) => {
+      const degradedHTML = generateDegradedHTML(browserData);
+
+      if (browserData.browserType === 'legacy') {
+        // Should work with basic HTML/CSS
+        expect(degradedHTML).not.toMatch(/class="[^"]*js-enabled[^"]*"/);
+        expect(degradedHTML).toMatch(/<a[^>]*href="[^"]*"[^>]*>/);
+        expect(degradedHTML).toMatch(/<form[^>]*action="[^"]*"[^>]*>/);
+      }
+
+      if (browserData.browserType === 'minimal') {
+        // Should work with minimal CSS support
+        expect(degradedHTML).not.toContain('grid-template-columns');
+        expect(degradedHTML).not.toContain('clamp(');
+        expect(degradedHTML).not.toContain('var(--');
+      }
+
+      // Should always have semantic HTML structure
+      expect(degradedHTML).toMatch(/<nav[^>]*>/);
+      expect(degradedHTML).toMatch(/<main[^>]*>/);
+      expect(degradedHTML).toMatch(/<header[^>]*>/);
+      expect(degradedHTML).toMatch(/<footer[^>]*>/);
+
+    }), { numRuns: 100 });
+  });
+
+  /**
+   * Helper function to generate core HTML without enhancements
+   */
+  function generateCoreHTML(enhancementData) {
+    let html = '';
+
+    switch (enhancementData.featureType) {
+      case 'navigation':
+        html = `
+          <nav role="navigation" aria-label="Main navigation">
+            <ul class="nav-menu">
+              <li class="nav-menu__item">
+                <a href="/" class="nav-menu__link">Home</a>
+              </li>
+              <li class="nav-menu__item">
+                <a href="/shop" class="nav-menu__link">Shop</a>
+              </li>
+              <li class="nav-menu__item">
+                <a href="/about" class="nav-menu__link">About</a>
+              </li>
+            </ul>
+          </nav>
+        `;
+        break;
+
+      case 'search':
+        html = `
+          <form class="search-form" role="search" action="/search" method="get">
+            <label for="search-input" class="visually-hidden">Search products</label>
+            <input type="search" id="search-input" name="q" class="search-input" placeholder="Search products...">
+            <button type="submit" class="search-button">Search</button>
+          </form>
+        `;
+        break;
+
+      case 'cart':
+        html = `
+          <a href="/cart" class="cart-button" aria-label="Shopping cart">
+            Cart (0 items)
+          </a>
+        `;
+        break;
+
+      case 'product-interaction':
+        html = `
+          <article class="product-card">
+            <a href="/product/1" class="product-card__link">
+              <h3 class="product-card__title">Product Name</h3>
+              <div class="product-card__price">$49.99</div>
+            </a>
+          </article>
+        `;
+        break;
+    }
+
+    return html;
+  }
+
+  /**
+   * Helper function to generate enhanced HTML with JavaScript
+   */
+  function generateEnhancedHTML(enhancementData) {
+    if (!enhancementData.hasJavaScript) {
+      return generateCoreHTML(enhancementData);
+    }
+
+    let html = '<html class="js-enabled">';
+
+    switch (enhancementData.featureType) {
+      case 'navigation':
+        html += `
+          <nav role="navigation" aria-label="Main navigation">
+            <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+              <span class="nav-toggle__line"></span>
+              <span class="nav-toggle__line"></span>
+              <span class="nav-toggle__line"></span>
+            </button>
+            <ul class="nav-menu">
+              <li class="nav-menu__item">
+                <a href="/" class="nav-menu__link">Home</a>
+              </li>
+              <li class="nav-menu__item">
+                <a href="/shop" class="nav-menu__link">Shop</a>
+              </li>
+            </ul>
+          </nav>
+        `;
+        break;
+
+      case 'search':
+        html += `
+          <form class="search-form" role="search">
+            <input type="search" class="search-input" placeholder="Search products...">
+            <button type="submit" class="search-button">Search</button>
+            <div class="search-suggestions" role="listbox" aria-label="Search suggestions" hidden></div>
+          </form>
+        `;
+        break;
+
+      case 'cart':
+        html += `
+          <button class="cart-button" aria-label="Shopping cart">
+            Cart
+            <span class="cart-count" aria-live="polite">0</span>
+          </button>
+        `;
+        break;
+
+      case 'product-interaction':
+        html += `
+          <article class="product-card">
+            <h3 class="product-card__title">Product Name</h3>
+            <div class="product-card__price">$49.99</div>
+            <button class="product-card__action" data-product-id="1">Add to Cart</button>
+          </article>
+        `;
+        break;
+    }
+
+    html += '</html>';
+    return html;
+  }
+
+  /**
+   * Helper function to generate fallback CSS
+   */
+  function generateFallbackCSS(enhancementData) {
+    let css = '';
+
+    if (!enhancementData.browserSupport.grid) {
+      css += `
+        .no-grid .product-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+        
+        .no-grid .product-grid > li {
+          flex: 0 1 250px;
+          min-width: 200px;
+        }
+      `;
+    }
+
+    if (!enhancementData.browserSupport.customProperties) {
+      css += `
+        .no-customProperties .button--primary {
+          background-color: #e94560;
+          color: #ffffff;
+        }
+        
+        .no-customProperties .button--primary:hover {
+          background-color: #d63851;
+        }
+      `;
+    }
+
+    if (!enhancementData.browserSupport.clamp) {
+      css += `
+        .no-clamp .hero-section__title {
+          font-size: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+          .no-clamp .hero-section__title {
+            font-size: 2.5rem;
+          }
+        }
+      `;
+    }
+
+    if (!enhancementData.browserSupport.grid && enhancementData.browserSupport.flexbox) {
+      css += `
+        .product-grid {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        
+        .product-grid > li {
+          flex: 1 1 250px;
+        }
+      `;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate device-specific CSS
+   */
+  function generateDeviceCSS(enhancementData) {
+    let css = '';
+
+    if (enhancementData.deviceType === 'mobile') {
+      css = `
+        .product-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        
+        .button {
+          min-height: 44px;
+          min-width: 44px;
+          padding: 0.75rem 1rem;
+        }
+      `;
+    }
+
+    if (enhancementData.deviceType === 'tablet') {
+      css = `
+        @media (min-width: 768px) {
+          .product-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+          }
+        }
+      `;
+    }
+
+    if (enhancementData.deviceType === 'desktop') {
+      css = `
+        @media (min-width: 1024px) {
+          .product-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+          }
+        }
+      `;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate accessible HTML
+   */
+  function generateAccessibleHTML(accessibilityData) {
+    let html = '';
+
+    switch (accessibilityData.featureType) {
+      case 'navigation':
+        html = `
+          <nav role="navigation" aria-label="Main navigation">
+            ${accessibilityData.hasJavaScript ? 
+              '<button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu"></button>' : 
+              ''
+            }
+            <ul class="nav-menu">
+              <li><a href="/" ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}>Home</a></li>
+            </ul>
+          </nav>
+        `;
+        break;
+
+      case 'search':
+        html = `
+          <form role="search" aria-label="Product search">
+            <input type="search" aria-label="Search products" ${accessibilityData.hasJavaScript ? 'aria-describedby="search-help"' : ''} ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}>
+            <button type="submit" ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}>Search</button>
+            ${accessibilityData.hasJavaScript ? '<div id="search-help" class="visually-hidden">Use arrow keys to navigate suggestions</div>' : ''}
+          </form>
+        `;
+        break;
+
+      case 'cart':
+        html = `
+          <${accessibilityData.hasJavaScript ? 'button' : 'a'} 
+            class="cart-button" 
+            aria-label="Shopping cart"
+            ${!accessibilityData.hasJavaScript ? 'href="/cart"' : ''}
+            ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}
+          >
+            Cart
+            <span aria-live="polite">0 items</span>
+          </${accessibilityData.hasJavaScript ? 'button' : 'a'}>
+        `;
+        break;
+    }
+
+    return html;
+  }
+
+  /**
+   * Helper function to generate degraded HTML for older browsers
+   */
+  function generateDegradedHTML(browserData) {
+    let html = '<html>';
+
+    if (browserData.browserType === 'legacy') {
+      html += `
+        <nav>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/shop">Shop</a></li>
+            <li><a href="/about">About</a></li>
+          </ul>
+        </nav>
+        <main>
+          <header>
+            <h1>Welcome</h1>
+          </header>
+          <form action="/search" method="get">
+            <input type="text" name="q" placeholder="Search">
+            <button type="submit">Search</button>
+          </form>
+        </main>
+        <footer>
+          <p>Copyright 2026</p>
+        </footer>
+      `;
+    } else if (browserData.browserType === 'minimal') {
+      html += `
+        <nav role="navigation">
+          <ul class="nav-menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/shop">Shop</a></li>
+          </ul>
+        </nav>
+        <main role="main">
+          <header role="banner">
+            <h1>Welcome</h1>
+          </header>
+        </main>
+        <footer role="contentinfo">
+          <p>Copyright 2026</p>
+        </footer>
+      `;
+    } else {
+      // Modern browser
+      html += `
+        <nav role="navigation" class="js-enabled">
+          <button class="nav-toggle" aria-expanded="false">Menu</button>
+          <ul class="nav-menu">
+            <li><a href="/" tabindex="0">Home</a></li>
+            <li><a href="/shop" tabindex="0">Shop</a></li>
+          </ul>
+        </nav>
+        <main role="main">
+          <header role="banner">
+            <h1>Welcome</h1>
+          </header>
+        </main>
+        <footer role="contentinfo">
+          <p>Copyright 2026</p>
+        </footer>
+      `;
+    }
+
+    html += '</html>';
+    return html;
+  }
+});
+
+/**
+ * **Feature: ecommerce-homepage, Property 12: Mobile responsive design**
+ * **Validates: Requirements 4.1**
+ * 
+ * For any mobile viewport, the homepage should implement fluid layouts 
+ * that adapt appropriately to the screen size
+ */
+describe('Property 12: Mobile responsive design', () => {
+
+  // Arbitrary for generating viewport data
+  const viewportArb = fc.record({
+    width: fc.integer({ min: 320, max: 1920 }),
+    height: fc.integer({ min: 568, max: 1080 }),
+    devicePixelRatio: fc.float({ min: 1, max: 3, noNaN: true }),
+    orientation: fc.constantFrom('portrait', 'landscape'),
+    isMobile: fc.boolean(),
+    isTablet: fc.boolean()
+  }).filter(data => {
+    // Classify devices based on width
+    data.isMobile = data.width <= 768;
+    data.isTablet = data.width > 768 && data.width <= 1024;
+    return true;
+  });
+
+  it('should implement mobile-first responsive breakpoints', () => {
+    fc.assert(fc.property(viewportArb, (viewportData) => {
+      const responsiveCSS = generateResponsiveCSS(viewportData);
+
+      // Should always have base mobile styles
+      expect(responsiveCSS).toContain('/* Base mobile styles */');
+      expect(responsiveCSS).toContain('width: 100%');
+      
+      // Should have mobile-first media queries (min-width) when viewport is large enough
+      if (viewportData.width >= 640) {
+        expect(responsiveCSS).toMatch(/@media\s*\(\s*min-width:\s*\d+px\s*\)/);
+        expect(responsiveCSS).toContain('@media (min-width: 640px)');
+      }
+      
+      if (viewportData.width >= 768) {
+        expect(responsiveCSS).toContain('@media (min-width: 768px)');
+      }
+      
+      if (viewportData.width >= 1024) {
+        expect(responsiveCSS).toContain('@media (min-width: 1024px)');
+      }
+      
+      // Should not use max-width for mobile-first approach
+      expect(responsiveCSS).not.toMatch(/@media\s*\(\s*max-width:\s*\d+px\s*\)/);
+
+    }), { numRuns: 100 });
+  });
+
+  it('should use fluid layouts with CSS Grid and Flexbox', () => {
+    const layoutArb = fc.record({
+      containerType: fc.constantFrom('grid', 'flex'),
+      itemCount: fc.integer({ min: 1, max: 12 }),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasFluidColumns: fc.boolean(),
+      hasFlexibleGaps: fc.boolean()
+    });
+
+    fc.assert(fc.property(layoutArb, (layoutData) => {
+      const layoutCSS = generateFluidLayoutCSS(layoutData);
+
+      if (layoutData.containerType === 'grid') {
+        // Should use CSS Grid with fluid columns
+        expect(layoutCSS).toMatch(/display:\s*grid/);
+        
+        if (layoutData.hasFluidColumns) {
+          expect(layoutCSS).toMatch(/grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(/);
+        }
+        
+        // Should adapt columns based on viewport
+        if (layoutData.viewportWidth <= 640) {
+          expect(layoutCSS).toMatch(/grid-template-columns:\s*1fr/);
+        } else if (layoutData.viewportWidth <= 1024) {
+          expect(layoutCSS).toMatch(/grid-template-columns:\s*repeat\([2-3],\s*1fr\)/);
+        }
+      }
+
+      if (layoutData.containerType === 'flex') {
+        // Should use Flexbox with flexible wrapping
+        expect(layoutCSS).toMatch(/display:\s*flex/);
+        expect(layoutCSS).toMatch(/flex-wrap:\s*wrap/);
+        
+        // Should have flexible gaps
+        if (layoutData.hasFlexibleGaps) {
+          expect(layoutCSS).toMatch(/gap:\s*var\(--space-\w+\)/);
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should implement fluid typography with clamp() functions', () => {
+    const typographyArb = fc.record({
+      textType: fc.constantFrom('heading', 'body', 'caption', 'button'),
+      minSize: fc.float({ min: 0.75, max: 1.5, noNaN: true }),
+      maxSize: fc.float({ min: 1.5, max: 4, noNaN: true }),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasFluidScaling: fc.boolean()
+    }).filter(data => data.maxSize > data.minSize);
+
+    fc.assert(fc.property(typographyArb, (typographyData) => {
+      const typographyCSS = generateFluidTypographyCSS(typographyData);
+
+      if (typographyData.hasFluidScaling) {
+        // Should use clamp() for fluid typography
+        expect(typographyCSS).toMatch(/font-size:\s*clamp\(/);
+        
+        // Should have proper clamp structure: clamp(min, preferred, max)
+        expect(typographyCSS).toMatch(/clamp\(\s*[\d.]+rem,\s*[\d.]+vw\s*\+\s*[\d.]+rem,\s*[\d.]+rem\s*\)/);
+        
+        // Min size should be smaller than max size
+        const clampMatch = typographyCSS.match(/clamp\(\s*([\d.]+)rem,\s*[\d.]+vw\s*\+\s*[\d.]+rem,\s*([\d.]+)rem\s*\)/);
+        if (clampMatch) {
+          const minValue = parseFloat(clampMatch[1]);
+          const maxValue = parseFloat(clampMatch[2]);
+          expect(maxValue).toBeGreaterThan(minValue);
+        }
+      }
+
+      // Should have appropriate font sizes for different text types
+      if (typographyData.textType === 'heading' && typographyData.hasFluidScaling) {
+        expect(typographyCSS).toMatch(/font-size:\s*clamp\([\d.]+rem,\s*[\d.]+vw\s*\+\s*[\d.]+rem,\s*[\d.]+rem\)/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should adapt container widths across viewport sizes', () => {
+    const containerArb = fc.record({
+      containerType: fc.constantFrom('section-container', 'hero-container', 'product-grid'),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasPadding: fc.boolean(),
+      hasMaxWidth: fc.boolean(),
+      isFluid: fc.boolean()
+    });
+
+    fc.assert(fc.property(containerArb, (containerData) => {
+      const containerCSS = generateContainerCSS(containerData);
+
+      // Should have appropriate width constraints
+      if (containerData.hasMaxWidth) {
+        expect(containerCSS).toMatch(/max-width:\s*var\(--container-\w+\)/);
+      }
+
+      // Should have responsive padding
+      if (containerData.hasPadding) {
+        expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-\w+\)/);
+        
+        // Should adapt to viewport size
+        if (containerData.viewportWidth <= 640) {
+          expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-md\)/);
+        } else if (containerData.viewportWidth <= 1024) {
+          expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-lg\)/);
+        } else {
+          expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-xl\)/);
+        }
+      }
+
+      // Should be fluid by default
+      if (containerData.isFluid) {
+        expect(containerCSS).toMatch(/width:\s*100%/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should maintain proper component proportions across devices', () => {
+    const componentArb = fc.record({
+      componentType: fc.constantFrom('hero-section', 'product-card', 'category-card', 'navigation'),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      aspectRatio: fc.float({ min: 0.5, max: 2, noNaN: true }),
+      hasResponsiveImages: fc.boolean(),
+      hasFlexibleLayout: fc.boolean()
+    });
+
+    fc.assert(fc.property(componentArb, (componentData) => {
+      const componentCSS = generateComponentCSS(componentData);
+
+      // Should maintain appropriate proportions
+      if (componentData.hasResponsiveImages) {
+        expect(componentCSS).toMatch(/aspect-ratio:\s*[\d.\/]+/);
+        expect(componentCSS).toMatch(/object-fit:\s*cover/);
+      }
+
+      // Should have flexible layouts
+      if (componentData.hasFlexibleLayout) {
+        expect(componentCSS).toMatch(/display:\s*(flex|grid)/);
+      }
+
+      // Should adapt layout based on viewport
+      if (componentData.componentType === 'hero-section' && componentData.hasFlexibleLayout) {
+        if (componentData.viewportWidth <= 768) {
+          expect(componentCSS).toMatch(/grid-template-columns:\s*1fr/);
+          expect(componentCSS).toMatch(/text-align:\s*center/);
+        } else {
+          expect(componentCSS).toMatch(/grid-template-columns:\s*1fr\s*1fr/);
+        }
+      }
+
+      if (componentData.componentType === 'navigation' && componentData.hasFlexibleLayout) {
+        if (componentData.viewportWidth <= 768) {
+          expect(componentCSS).toMatch(/flex-direction:\s*column/);
+        } else {
+          expect(componentCSS).toMatch(/flex-direction:\s*row/);
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should implement progressive enhancement for larger screens', () => {
+    const enhancementArb = fc.record({
+      baseFeature: fc.constantFrom('navigation', 'grid-layout', 'typography', 'spacing'),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasEnhancement: fc.boolean(),
+      enhancementType: fc.constantFrom('visual', 'layout', 'interaction', 'performance')
+    });
+
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const enhancementCSS = generateProgressiveEnhancementCSS(enhancementData);
+
+      // Base styles should work on all devices
+      expect(enhancementCSS).toMatch(/\/\* Base styles \*\//);
+
+      if (enhancementData.hasEnhancement && enhancementData.viewportWidth > 768) {
+        // Should have progressive enhancements for larger screens
+        expect(enhancementCSS).toMatch(/@media\s*\(\s*min-width:\s*\d+px\s*\)/);
+
+        switch (enhancementData.enhancementType) {
+          case 'visual':
+            expect(enhancementCSS).toMatch(/transform|box-shadow|gradient/);
+            break;
+          case 'layout':
+            if (enhancementData.baseFeature === 'navigation' || enhancementData.baseFeature === 'grid-layout') {
+              expect(enhancementCSS).toMatch(/grid-template-columns|flex-direction/);
+            }
+            break;
+          case 'interaction':
+            expect(enhancementCSS).toMatch(/:hover|:focus/);
+            break;
+          case 'performance':
+            expect(enhancementCSS).toMatch(/will-change|contain/);
+            break;
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  /**
+   * Helper function to generate responsive CSS
+   */
+  function generateResponsiveCSS(viewportData) {
+    let css = `/* Base mobile styles */
+    .container {
+      width: 100%;
+      padding: 0 var(--space-md);
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }`;
+
+    if (viewportData.width >= 640) {
+      css += `
+      
+      @media (min-width: 640px) {
+        .container {
+          padding: 0 var(--space-lg);
+        }
+        
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: var(--space-lg);
+        }
+      }`;
+    }
+
+    if (viewportData.width >= 768) {
+      css += `
+      
+      @media (min-width: 768px) {
+        .container {
+          max-width: var(--container-md);
+          margin: 0 auto;
+          padding: 0 var(--space-xl);
+        }
+      }`;
+    }
+
+    if (viewportData.width >= 1024) {
+      css += `
+      
+      @media (min-width: 1024px) {
+        .container {
+          max-width: var(--container-lg);
+        }
+        
+        .grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: var(--space-xl);
+        }
+      }`;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate fluid layout CSS
+   */
+  function generateFluidLayoutCSS(layoutData) {
+    let css = '';
+
+    if (layoutData.containerType === 'grid') {
+      css = `.grid-container {
+        display: grid;`;
+
+      if (layoutData.viewportWidth <= 640) {
+        css += `
+        grid-template-columns: 1fr;`;
+      } else if (layoutData.viewportWidth <= 1024) {
+        css += `
+        grid-template-columns: repeat(2, 1fr);`;
+      } else {
+        css += `
+        grid-template-columns: repeat(3, 1fr);`;
+      }
+
+      if (layoutData.hasFluidColumns) {
+        css += `
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));`;
+      }
+
+      if (layoutData.hasFlexibleGaps) {
+        css += `
+        gap: var(--space-lg);`;
+      }
+
+      css += `
+      }`;
+    }
+
+    if (layoutData.containerType === 'flex') {
+      css = `.flex-container {
+        display: flex;
+        flex-wrap: wrap;`;
+
+      if (layoutData.hasFlexibleGaps) {
+        css += `
+        gap: var(--space-md);`;
+      }
+
+      css += `
+      }`;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate fluid typography CSS
+   */
+  function generateFluidTypographyCSS(typographyData) {
+    let css = `.${typographyData.textType} {`;
+
+    if (typographyData.hasFluidScaling) {
+      const minSize = typographyData.minSize;
+      const maxSize = typographyData.maxSize;
+      const vwValue = ((maxSize - minSize) * 100 / (1920 - 320)).toFixed(2);
+      const baseValue = (minSize - (320 * parseFloat(vwValue) / 100)).toFixed(2);
+
+      css += `
+      font-size: clamp(${minSize}rem, ${vwValue}vw + ${baseValue}rem, ${maxSize}rem);`;
+    } else {
+      // Fallback static sizes
+      if (typographyData.textType === 'heading') {
+        css += `
+        font-size: 2rem;`;
+      } else {
+        css += `
+        font-size: 1rem;`;
+      }
+    }
+
+    css += `
+    line-height: 1.5;
+    }`;
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate container CSS
+   */
+  function generateContainerCSS(containerData) {
+    let css = `.${containerData.containerType} {
+      width: 100%;`;
+
+    if (containerData.isFluid) {
+      css += `
+      width: 100%;`;
+    }
+
+    if (containerData.hasMaxWidth) {
+      if (containerData.viewportWidth <= 640) {
+        css += `
+        max-width: var(--container-sm);`;
+      } else if (containerData.viewportWidth <= 1024) {
+        css += `
+        max-width: var(--container-md);`;
+      } else {
+        css += `
+        max-width: var(--container-lg);`;
+      }
+    }
+
+    if (containerData.hasPadding) {
+      if (containerData.viewportWidth <= 640) {
+        css += `
+        padding: 0 var(--space-md);`;
+      } else if (containerData.viewportWidth <= 1024) {
+        css += `
+        padding: 0 var(--space-lg);`;
+      } else {
+        css += `
+        padding: 0 var(--space-xl);`;
+      }
+    }
+
+    css += `
+      margin: 0 auto;
+    }`;
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate component CSS
+   */
+  function generateComponentCSS(componentData) {
+    let css = `.${componentData.componentType} {`;
+
+    if (componentData.hasFlexibleLayout) {
+      if (componentData.componentType === 'hero-section') {
+        css += `
+        display: grid;`;
+        
+        if (componentData.viewportWidth <= 768) {
+          css += `
+          grid-template-columns: 1fr;
+          text-align: center;`;
+        } else {
+          css += `
+          grid-template-columns: 1fr 1fr;
+          text-align: left;`;
+        }
+      } else if (componentData.componentType === 'navigation') {
+        css += `
+        display: flex;`;
+        
+        if (componentData.viewportWidth <= 768) {
+          css += `
+          flex-direction: column;`;
+        } else {
+          css += `
+          flex-direction: row;`;
+        }
+      } else if (componentData.componentType === 'product-card' || componentData.componentType === 'category-card') {
+        css += `
+        display: flex;
+        flex-direction: column;`;
+      }
+    }
+
+    if (componentData.hasResponsiveImages) {
+      css += `
+      aspect-ratio: ${componentData.aspectRatio};
+      object-fit: cover;`;
+    }
+
+    css += `
+    }`;
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate progressive enhancement CSS
+   */
+  function generateProgressiveEnhancementCSS(enhancementData) {
+    let css = `/* Base styles */
+    .${enhancementData.baseFeature} {
+      /* Core functionality that works everywhere */`;
+
+    switch (enhancementData.baseFeature) {
+      case 'navigation':
+        css += `
+        display: flex;
+        flex-direction: column;`;
+        break;
+      case 'grid-layout':
+        css += `
+        display: block;`;
+        break;
+      case 'typography':
+        css += `
+        font-size: 1rem;`;
+        break;
+      case 'spacing':
+        css += `
+        margin: 1rem 0;`;
+        break;
+    }
+
+    css += `
+    }`;
+
+    if (enhancementData.hasEnhancement && enhancementData.viewportWidth > 768) {
+      css += `
+      
+      @media (min-width: 769px) {
+        .${enhancementData.baseFeature} {`;
+
+      switch (enhancementData.enhancementType) {
+        case 'visual':
+          css += `
+          transform: perspective(1000px) rotateY(-2deg);
+          box-shadow: var(--shadow-xl);`;
+          break;
+        case 'layout':
+          if (enhancementData.baseFeature === 'navigation') {
+            css += `
+            flex-direction: row;`;
+          } else if (enhancementData.baseFeature === 'grid-layout') {
+            css += `
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));`;
+          }
+          break;
+        case 'interaction':
+          css += `
+          transition: all 0.3s ease;
+          }
+          
+          .${enhancementData.baseFeature}:hover {
+            transform: translateY(-2px);`;
+          break;
+        case 'performance':
+          css += `
+          will-change: transform;
+          contain: layout style paint;`;
+          break;
+      }
+
+      css += `
+        }
+      }`;
+    }
+
+    return css;
+  }
+});
