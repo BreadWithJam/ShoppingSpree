@@ -93,107 +93,141 @@ export class CartManager extends BaseModule {
   }
 
   /**
-   * Add item to cart
+   * Add item to cart with retry mechanism
    */
   addItem(product, quantity = 1) {
-    try {
-      const existingItemIndex = this.cart.items.findIndex(
-        item => item.product.id === product.id
-      );
-
-      if (existingItemIndex >= 0) {
-        // Update existing item quantity
-        this.cart.items[existingItemIndex].quantity += quantity;
-      } else {
-        // Add new item
-        this.cart.items.push({
-          product: { ...product },
-          quantity,
-          addedAt: new Date().toISOString()
-        });
-      }
-
-      this.calculateCartTotals();
-      this.saveCartToStorage();
-      this.updateCartDisplay();
-      this.showAddToCartFeedback(product);
-
-      // Emit cart updated event
-      this.emitCartEvent('cartUpdated', { action: 'add', product, quantity });
-
-    } catch (error) {
-      this.handleError(error, 'addItem');
-      this.showCartError('Failed to add item to cart');
-    }
+    return this.retryOperation(() => this._addItemInternal(product, quantity), 'addItem');
   }
 
   /**
-   * Remove item from cart
+   * Internal add item implementation
+   */
+  _addItemInternal(product, quantity = 1) {
+    // Validate input parameters
+    if (!product || !product.id || !product.name || typeof product.price !== 'number') {
+      throw new Error('Invalid product data provided');
+    }
+
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+      throw new Error('Invalid quantity provided');
+    }
+
+    const existingItemIndex = this.cart.items.findIndex(
+      item => item.product.id === product.id
+    );
+
+    if (existingItemIndex >= 0) {
+      // Update existing item quantity
+      this.cart.items[existingItemIndex].quantity += quantity;
+    } else {
+      // Add new item
+      this.cart.items.push({
+        product: { ...product },
+        quantity,
+        addedAt: new Date().toISOString()
+      });
+    }
+
+    this.calculateCartTotals();
+    this.saveCartToStorage();
+    this.updateCartDisplay();
+    this.showAddToCartFeedback(product);
+
+    // Emit cart updated event
+    this.emitCartEvent('cartUpdated', { action: 'add', product, quantity });
+
+    return true;
+  }
+
+  /**
+   * Remove item from cart with retry mechanism
    */
   removeItem(productId) {
-    try {
-      const initialLength = this.cart.items.length;
-      this.cart.items = this.cart.items.filter(item => item.product.id !== productId);
+    return this.retryOperation(() => this._removeItemInternal(productId), 'removeItem');
+  }
 
-      if (this.cart.items.length < initialLength) {
+  /**
+   * Internal remove item implementation
+   */
+  _removeItemInternal(productId) {
+    if (!productId) {
+      throw new Error('Product ID is required');
+    }
+
+    const initialLength = this.cart.items.length;
+    this.cart.items = this.cart.items.filter(item => item.product.id !== productId);
+
+    if (this.cart.items.length < initialLength) {
+      this.calculateCartTotals();
+      this.saveCartToStorage();
+      this.updateCartDisplay();
+
+      // Emit cart updated event
+      this.emitCartEvent('cartUpdated', { action: 'remove', productId });
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Update item quantity with retry mechanism
+   */
+  updateQuantity(productId, quantity) {
+    return this.retryOperation(() => this._updateQuantityInternal(productId, quantity), 'updateQuantity');
+  }
+
+  /**
+   * Internal update quantity implementation
+   */
+  _updateQuantityInternal(productId, quantity) {
+    if (!productId) {
+      throw new Error('Product ID is required');
+    }
+
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      throw new Error('Invalid quantity provided');
+    }
+
+    const item = this.cart.items.find(item => item.product.id === productId);
+
+    if (item) {
+      if (quantity <= 0) {
+        return this._removeItemInternal(productId);
+      } else {
+        item.quantity = quantity;
         this.calculateCartTotals();
         this.saveCartToStorage();
         this.updateCartDisplay();
 
         // Emit cart updated event
-        this.emitCartEvent('cartUpdated', { action: 'remove', productId });
+        this.emitCartEvent('cartUpdated', { action: 'update', productId, quantity });
+        return true;
       }
-
-    } catch (error) {
-      this.handleError(error, 'removeItem');
-      this.showCartError('Failed to remove item from cart');
     }
+
+    return false;
   }
 
   /**
-   * Update item quantity
-   */
-  updateQuantity(productId, quantity) {
-    try {
-      const item = this.cart.items.find(item => item.product.id === productId);
-
-      if (item) {
-        if (quantity <= 0) {
-          this.removeItem(productId);
-        } else {
-          item.quantity = quantity;
-          this.calculateCartTotals();
-          this.saveCartToStorage();
-          this.updateCartDisplay();
-
-          // Emit cart updated event
-          this.emitCartEvent('cartUpdated', { action: 'update', productId, quantity });
-        }
-      }
-
-    } catch (error) {
-      this.handleError(error, 'updateQuantity');
-      this.showCartError('Failed to update item quantity');
-    }
-  }
-
-  /**
-   * Clear entire cart
+   * Clear entire cart with retry mechanism
    */
   clearCart() {
-    try {
-      this.cart.items = [];
-      this.calculateCartTotals();
-      this.saveCartToStorage();
-      this.updateCartDisplay();
+    return this.retryOperation(() => this._clearCartInternal(), 'clearCart');
+  }
 
-      // Emit cart updated event
-      this.emitCartEvent('cartUpdated', { action: 'clear' });
+  /**
+   * Internal clear cart implementation
+   */
+  _clearCartInternal() {
+    this.cart.items = [];
+    this.calculateCartTotals();
+    this.saveCartToStorage();
+    this.updateCartDisplay();
 
-    } catch (error) {
-      this.handleError(error, 'clearCart');
-      this.showCartError('Failed to clear cart');
-    }
+    // Emit cart updated event
+    this.emitCartEvent('cartUpdated', { action: 'clear' });
+    return true;
   }
 
   /**
@@ -395,9 +429,28 @@ export class CartManager extends BaseModule {
       .cart-count--updated {
         animation: cartBounce 0.3s ease-in-out;
       }
+      
+      .cart-count--increased {
+        animation: cartBounce 0.3s ease-in-out, cartGlow 0.5s ease-in-out;
+      }
+      
+      .cart-count--decreased {
+        animation: cartShrink 0.3s ease-in-out;
+      }
+      
       @keyframes cartBounce {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.2); }
+      }
+      
+      @keyframes cartGlow {
+        0%, 100% { box-shadow: none; }
+        50% { box-shadow: 0 0 10px rgba(40, 167, 69, 0.5); }
+      }
+      
+      @keyframes cartShrink {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(0.8); }
       }
     `;
     
@@ -453,54 +506,211 @@ export class CartManager extends BaseModule {
   }
 
   /**
-   * Show cart error
+   * Show cart error with user-friendly messages
    */
-  showCartError(message) {
+  showCartError(message, isRetryable = false) {
     console.error('Cart error:', message);
     
-    // You could show a toast notification here
-    // For now, just log the error
+    // Create error notification
+    const errorNotification = document.createElement('div');
+    errorNotification.className = 'cart-error-notification';
+    errorNotification.setAttribute('role', 'alert');
+    errorNotification.setAttribute('aria-live', 'assertive');
+    
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'cart-error-message';
+    errorMessage.textContent = message;
+    
+    errorNotification.appendChild(errorMessage);
+    
+    if (isRetryable) {
+      const retryButton = document.createElement('button');
+      retryButton.className = 'cart-error-retry';
+      retryButton.textContent = 'Retry';
+      retryButton.addEventListener('click', () => {
+        errorNotification.remove();
+        // The retry will be handled by the calling function
+      });
+      errorNotification.appendChild(retryButton);
+    }
+    
+    errorNotification.style.cssText = `
+      position: fixed;
+      top: 80px;
+      right: 2rem;
+      background: #dc3545;
+      color: white;
+      padding: 1rem;
+      border-radius: 4px;
+      z-index: 9999;
+      max-width: 300px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    
+    document.body.appendChild(errorNotification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+      if (errorNotification.parentNode) {
+        errorNotification.remove();
+      }
+    }, 5000);
   }
 
   /**
-   * Save cart to localStorage
+   * Retry operation with exponential backoff
+   */
+  async retryOperation(operation, operationName, showUserError = true, maxRetries = 3) {
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await operation();
+      } catch (error) {
+        lastError = error;
+        this.handleError(error, `${operationName} (attempt ${attempt})`);
+        
+        // Don't retry on validation errors
+        if (error.message.includes('Invalid') || error.message.includes('required')) {
+          break;
+        }
+        
+        // Don't retry on final attempt
+        if (attempt === maxRetries) {
+          break;
+        }
+        
+        // Exponential backoff: wait 100ms, 200ms, 400ms
+        const delay = 100 * Math.pow(2, attempt - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    // All retries failed
+    if (showUserError) {
+      const userMessage = this.getUserFriendlyErrorMessage(lastError, operationName);
+      this.showCartError(userMessage, maxRetries > 1);
+    }
+    
+    throw lastError;
+  }
+
+  /**
+   * Get user-friendly error message
+   */
+  getUserFriendlyErrorMessage(error, operationName) {
+    const errorMessages = {
+      addItem: 'Unable to add item to cart. Please try again.',
+      removeItem: 'Unable to remove item from cart. Please try again.',
+      updateQuantity: 'Unable to update item quantity. Please try again.',
+      clearCart: 'Unable to clear cart. Please try again.',
+      saveCartToStorage: 'Unable to save cart. Your changes may not persist.',
+      loadCartFromStorage: 'Unable to load saved cart. Starting with empty cart.'
+    };
+
+    if (error.message.includes('localStorage')) {
+      return 'Cart storage is unavailable. Changes may not be saved.';
+    }
+    
+    if (error.message.includes('Invalid') || error.message.includes('required')) {
+      return 'Invalid data provided. Please check your input.';
+    }
+    
+    if (error.message.includes('quota')) {
+      return 'Storage is full. Please clear some data and try again.';
+    }
+    
+    return errorMessages[operationName] || 'An unexpected error occurred. Please try again.';
+  }
+
+  /**
+   * Save cart to localStorage with retry mechanism
    */
   saveCartToStorage() {
-    try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.cart));
-    } catch (error) {
-      this.handleError(error, 'saveCartToStorage');
-      console.warn('Failed to save cart to localStorage');
-    }
+    return this.retryOperation(() => this._saveCartToStorageInternal(), 'saveCartToStorage');
   }
 
   /**
-   * Load cart from localStorage
+   * Internal save cart to localStorage implementation
+   */
+  _saveCartToStorageInternal() {
+    // Validate cart data before saving
+    if (!this.cart || !Array.isArray(this.cart.items)) {
+      throw new Error('Invalid cart data structure');
+    }
+
+    const cartData = JSON.stringify(this.cart);
+    
+    // Check if localStorage is available
+    if (typeof Storage === 'undefined') {
+      throw new Error('localStorage is not supported');
+    }
+
+    // Check storage quota
+    try {
+      const testKey = 'storage_test';
+      localStorage.setItem(testKey, 'test');
+      localStorage.removeItem(testKey);
+    } catch (error) {
+      if (error.name === 'QuotaExceededError') {
+        throw new Error('localStorage quota exceeded');
+      }
+      throw error;
+    }
+
+    localStorage.setItem(this.storageKey, cartData);
+    return true;
+  }
+
+  /**
+   * Load cart from localStorage with retry mechanism
    */
   loadCartFromStorage() {
-    try {
-      const savedCart = localStorage.getItem(this.storageKey);
-      
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        
-        // Validate cart structure
-        if (parsedCart && Array.isArray(parsedCart.items)) {
-          this.cart = {
-            items: parsedCart.items || [],
-            total: parsedCart.total || 0,
-            itemCount: parsedCart.itemCount || 0
-          };
-          
-          // Recalculate totals to ensure accuracy
-          this.calculateCartTotals();
-        }
-      }
-    } catch (error) {
-      this.handleError(error, 'loadCartFromStorage');
-      console.warn('Failed to load cart from localStorage, starting with empty cart');
-      this.cart = { items: [], total: 0, itemCount: 0 };
+    return this.retryOperation(() => this._loadCartFromStorageInternal(), 'loadCartFromStorage', false);
+  }
+
+  /**
+   * Internal load cart from localStorage implementation
+   */
+  _loadCartFromStorageInternal() {
+    // Check if localStorage is available
+    if (typeof Storage === 'undefined') {
+      throw new Error('localStorage is not supported');
     }
+
+    const savedCart = localStorage.getItem(this.storageKey);
+    
+    if (!savedCart) {
+      // No saved cart, initialize empty cart
+      this.cart = { items: [], total: 0, itemCount: 0 };
+      return true;
+    }
+
+    const parsedCart = JSON.parse(savedCart);
+    
+    // Validate cart structure
+    if (!parsedCart || !Array.isArray(parsedCart.items)) {
+      throw new Error('Invalid cart data structure in localStorage');
+    }
+
+    // Validate each cart item
+    for (const item of parsedCart.items) {
+      if (!item.product || !item.product.id || !item.product.name || 
+          typeof item.product.price !== 'number' || !Number.isInteger(item.quantity) || 
+          item.quantity <= 0) {
+        throw new Error('Invalid cart item data in localStorage');
+      }
+    }
+
+    this.cart = {
+      items: parsedCart.items || [],
+      total: parsedCart.total || 0,
+      itemCount: parsedCart.itemCount || 0
+    };
+    
+    // Recalculate totals to ensure accuracy
+    this.calculateCartTotals();
+    return true;
   }
 
   /**

@@ -2162,3 +2162,2151 @@ describe('Property 11: Touch target accessibility', () => {
     return js;
   }
 });
+
+/**
+ * **Feature: ecommerce-homepage, Property 16: Progressive enhancement**
+ * **Validates: Requirements 4.5**
+ * 
+ * For any JavaScript functionality on the homepage, core functionality 
+ * should remain available when JavaScript is disabled
+ */
+describe('Property 16: Progressive enhancement', () => {
+
+  // Arbitrary for generating progressive enhancement scenarios
+  const enhancementArb = fc.record({
+    featureType: fc.constantFrom('navigation', 'search', 'cart', 'product-interaction'),
+    hasJavaScript: fc.boolean(),
+    hasModernCSS: fc.boolean(),
+    browserSupport: fc.record({
+      grid: fc.boolean(),
+      flexbox: fc.boolean(),
+      customProperties: fc.boolean(),
+      clamp: fc.boolean()
+    }),
+    deviceType: fc.constantFrom('mobile', 'tablet', 'desktop')
+  });
+
+  it('should provide core functionality without JavaScript', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const coreHTML = generateCoreHTML(enhancementData);
+
+      // Core functionality should always be available
+      if (enhancementData.featureType === 'navigation') {
+        // Navigation should be accessible without JavaScript
+        expect(coreHTML).toMatch(/<nav[^>]*>/);
+        expect(coreHTML).toMatch(/<ul[^>]*class="nav-menu"[^>]*>/);
+        expect(coreHTML).toMatch(/<a[^>]*href="[^"]*"[^>]*>/);
+        
+        // Links should be functional without JavaScript
+        expect(coreHTML).not.toContain('javascript:');
+        expect(coreHTML).not.toContain('onclick=');
+      }
+
+      if (enhancementData.featureType === 'search') {
+        // Search form should work without JavaScript
+        expect(coreHTML).toMatch(/<form[^>]*>/);
+        expect(coreHTML).toMatch(/<input[^>]*type="search"[^>]*>/);
+        expect(coreHTML).toMatch(/<button[^>]*type="submit"[^>]*>/);
+      }
+
+      if (enhancementData.featureType === 'cart') {
+        // Cart should be accessible as a link without JavaScript
+        expect(coreHTML).toMatch(/<a[^>]*href="[^"]*cart[^"]*"[^>]*>/);
+      }
+
+      if (enhancementData.featureType === 'product-interaction') {
+        // Product links should work without JavaScript
+        expect(coreHTML).toMatch(/<a[^>]*href="[^"]*product[^"]*"[^>]*>/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should enhance functionality when JavaScript is available', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const enhancedHTML = generateEnhancedHTML(enhancementData);
+
+      if (enhancementData.hasJavaScript) {
+        // Should have JavaScript enhancement classes
+        expect(enhancedHTML).toContain('js-enabled');
+        
+        if (enhancementData.featureType === 'navigation') {
+          // Should have enhanced navigation features
+          expect(enhancedHTML).toMatch(/class="[^"]*nav-toggle[^"]*"/);
+          expect(enhancedHTML).toMatch(/aria-expanded="false"/);
+        }
+
+        if (enhancementData.featureType === 'search') {
+          // Should have enhanced search features
+          expect(enhancedHTML).toMatch(/class="[^"]*search-suggestions[^"]*"/);
+          expect(enhancedHTML).toMatch(/role="listbox"/);
+        }
+
+        if (enhancementData.featureType === 'cart') {
+          // Should have enhanced cart features
+          expect(enhancedHTML).toMatch(/<button[^>]*class="[^"]*cart-button[^"]*"/);
+          expect(enhancedHTML).toMatch(/aria-live="polite"/);
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should provide CSS fallbacks for unsupported features', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const fallbackCSS = generateFallbackCSS(enhancementData);
+
+      // Should have fallbacks for CSS Grid
+      if (!enhancementData.browserSupport.grid) {
+        expect(fallbackCSS).toMatch(/\.no-grid\s+\.product-grid\s*\{[^}]*display:\s*flex/);
+        expect(fallbackCSS).toMatch(/flex-wrap:\s*wrap/);
+      }
+
+      // Should have fallbacks for custom properties
+      if (!enhancementData.browserSupport.customProperties) {
+        expect(fallbackCSS).toMatch(/\.no-customProperties\s+\.button--primary\s*\{[^}]*background-color:\s*#e94560/);
+      }
+
+      // Should have fallbacks for clamp()
+      if (!enhancementData.browserSupport.clamp) {
+        expect(fallbackCSS).toMatch(/\.no-clamp\s+\.hero-section__title\s*\{[^}]*font-size:\s*2rem/);
+      }
+
+      // Should have flexbox fallbacks when grid is not supported
+      if (!enhancementData.browserSupport.grid && enhancementData.browserSupport.flexbox) {
+        expect(fallbackCSS).toMatch(/display:\s*flex/);
+        expect(fallbackCSS).toMatch(/flex:\s*[0-9]/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should adapt layout based on device capabilities', () => {
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const deviceCSS = generateDeviceCSS(enhancementData);
+
+      if (enhancementData.deviceType === 'mobile') {
+        // Mobile should have touch-friendly enhancements
+        expect(deviceCSS).toMatch(/min-height:\s*44px/);
+        expect(deviceCSS).toMatch(/min-width:\s*44px/);
+        
+        // Should have mobile-first approach
+        expect(deviceCSS).toMatch(/grid-template-columns:\s*1fr/);
+      }
+
+      if (enhancementData.deviceType === 'tablet') {
+        // Tablet should have intermediate layouts
+        expect(deviceCSS).toMatch(/@media\s*\(\s*min-width:\s*768px\s*\)/);
+      }
+
+      if (enhancementData.deviceType === 'desktop') {
+        // Desktop should have enhanced layouts
+        expect(deviceCSS).toMatch(/@media\s*\(\s*min-width:\s*1024px\s*\)/);
+        expect(deviceCSS).toMatch(/grid-template-columns:\s*repeat\(/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should maintain accessibility across enhancement levels', () => {
+    const accessibilityArb = fc.record({
+      featureType: fc.constantFrom('navigation', 'search', 'cart'),
+      hasJavaScript: fc.boolean(),
+      hasScreenReader: fc.boolean(),
+      hasKeyboardOnly: fc.boolean()
+    });
+
+    fc.assert(fc.property(accessibilityArb, (accessibilityData) => {
+      const accessibleHTML = generateAccessibleHTML(accessibilityData);
+
+      // Should always have proper ARIA attributes
+      expect(accessibleHTML).toMatch(/aria-label="[^"]+"/);
+
+      if (accessibilityData.featureType === 'navigation') {
+        expect(accessibleHTML).toMatch(/role="navigation"/);
+        expect(accessibilityData.hasJavaScript ? 
+          accessibleHTML.includes('aria-expanded') : 
+          !accessibleHTML.includes('aria-expanded')
+        ).toBe(true);
+      }
+
+      if (accessibilityData.featureType === 'search') {
+        expect(accessibleHTML).toMatch(/role="search"/);
+        if (accessibilityData.hasJavaScript) {
+          expect(accessibleHTML).toMatch(/aria-describedby="[^"]+"/);
+        }
+      }
+
+      if (accessibilityData.featureType === 'cart') {
+        expect(accessibleHTML).toMatch(/aria-live="polite"/);
+      }
+
+      // Should have keyboard navigation support
+      if (accessibilityData.hasKeyboardOnly) {
+        expect(accessibleHTML).toMatch(/tabindex="[0-9-]+"/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should gracefully degrade for older browsers', () => {
+    const browserArb = fc.record({
+      browserType: fc.constantFrom('modern', 'legacy', 'minimal'),
+      supportLevel: fc.record({
+        es6: fc.boolean(),
+        cssGrid: fc.boolean(),
+        flexbox: fc.boolean(),
+        customProperties: fc.boolean()
+      })
+    });
+
+    fc.assert(fc.property(browserArb, (browserData) => {
+      const degradedHTML = generateDegradedHTML(browserData);
+
+      if (browserData.browserType === 'legacy') {
+        // Should work with basic HTML/CSS
+        expect(degradedHTML).not.toMatch(/class="[^"]*js-enabled[^"]*"/);
+        expect(degradedHTML).toMatch(/<a[^>]*href="[^"]*"[^>]*>/);
+        expect(degradedHTML).toMatch(/<form[^>]*action="[^"]*"[^>]*>/);
+      }
+
+      if (browserData.browserType === 'minimal') {
+        // Should work with minimal CSS support
+        expect(degradedHTML).not.toContain('grid-template-columns');
+        expect(degradedHTML).not.toContain('clamp(');
+        expect(degradedHTML).not.toContain('var(--');
+      }
+
+      // Should always have semantic HTML structure
+      expect(degradedHTML).toMatch(/<nav[^>]*>/);
+      expect(degradedHTML).toMatch(/<main[^>]*>/);
+      expect(degradedHTML).toMatch(/<header[^>]*>/);
+      expect(degradedHTML).toMatch(/<footer[^>]*>/);
+
+    }), { numRuns: 100 });
+  });
+
+  /**
+   * Helper function to generate core HTML without enhancements
+   */
+  function generateCoreHTML(enhancementData) {
+    let html = '';
+
+    switch (enhancementData.featureType) {
+      case 'navigation':
+        html = `
+          <nav role="navigation" aria-label="Main navigation">
+            <ul class="nav-menu">
+              <li class="nav-menu__item">
+                <a href="/" class="nav-menu__link">Home</a>
+              </li>
+              <li class="nav-menu__item">
+                <a href="/shop" class="nav-menu__link">Shop</a>
+              </li>
+              <li class="nav-menu__item">
+                <a href="/about" class="nav-menu__link">About</a>
+              </li>
+            </ul>
+          </nav>
+        `;
+        break;
+
+      case 'search':
+        html = `
+          <form class="search-form" role="search" action="/search" method="get">
+            <label for="search-input" class="visually-hidden">Search products</label>
+            <input type="search" id="search-input" name="q" class="search-input" placeholder="Search products...">
+            <button type="submit" class="search-button">Search</button>
+          </form>
+        `;
+        break;
+
+      case 'cart':
+        html = `
+          <a href="/cart" class="cart-button" aria-label="Shopping cart">
+            Cart (0 items)
+          </a>
+        `;
+        break;
+
+      case 'product-interaction':
+        html = `
+          <article class="product-card">
+            <a href="/product/1" class="product-card__link">
+              <h3 class="product-card__title">Product Name</h3>
+              <div class="product-card__price">$49.99</div>
+            </a>
+          </article>
+        `;
+        break;
+    }
+
+    return html;
+  }
+
+  /**
+   * Helper function to generate enhanced HTML with JavaScript
+   */
+  function generateEnhancedHTML(enhancementData) {
+    if (!enhancementData.hasJavaScript) {
+      return generateCoreHTML(enhancementData);
+    }
+
+    let html = '<html class="js-enabled">';
+
+    switch (enhancementData.featureType) {
+      case 'navigation':
+        html += `
+          <nav role="navigation" aria-label="Main navigation">
+            <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
+              <span class="nav-toggle__line"></span>
+              <span class="nav-toggle__line"></span>
+              <span class="nav-toggle__line"></span>
+            </button>
+            <ul class="nav-menu">
+              <li class="nav-menu__item">
+                <a href="/" class="nav-menu__link">Home</a>
+              </li>
+              <li class="nav-menu__item">
+                <a href="/shop" class="nav-menu__link">Shop</a>
+              </li>
+            </ul>
+          </nav>
+        `;
+        break;
+
+      case 'search':
+        html += `
+          <form class="search-form" role="search">
+            <input type="search" class="search-input" placeholder="Search products...">
+            <button type="submit" class="search-button">Search</button>
+            <div class="search-suggestions" role="listbox" aria-label="Search suggestions" hidden></div>
+          </form>
+        `;
+        break;
+
+      case 'cart':
+        html += `
+          <button class="cart-button" aria-label="Shopping cart">
+            Cart
+            <span class="cart-count" aria-live="polite">0</span>
+          </button>
+        `;
+        break;
+
+      case 'product-interaction':
+        html += `
+          <article class="product-card">
+            <h3 class="product-card__title">Product Name</h3>
+            <div class="product-card__price">$49.99</div>
+            <button class="product-card__action" data-product-id="1">Add to Cart</button>
+          </article>
+        `;
+        break;
+    }
+
+    html += '</html>';
+    return html;
+  }
+
+  /**
+   * Helper function to generate fallback CSS
+   */
+  function generateFallbackCSS(enhancementData) {
+    let css = '';
+
+    if (!enhancementData.browserSupport.grid) {
+      css += `
+        .no-grid .product-grid {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+        }
+        
+        .no-grid .product-grid > li {
+          flex: 0 1 250px;
+          min-width: 200px;
+        }
+      `;
+    }
+
+    if (!enhancementData.browserSupport.customProperties) {
+      css += `
+        .no-customProperties .button--primary {
+          background-color: #e94560;
+          color: #ffffff;
+        }
+        
+        .no-customProperties .button--primary:hover {
+          background-color: #d63851;
+        }
+      `;
+    }
+
+    if (!enhancementData.browserSupport.clamp) {
+      css += `
+        .no-clamp .hero-section__title {
+          font-size: 2rem;
+        }
+        
+        @media (min-width: 768px) {
+          .no-clamp .hero-section__title {
+            font-size: 2.5rem;
+          }
+        }
+      `;
+    }
+
+    if (!enhancementData.browserSupport.grid && enhancementData.browserSupport.flexbox) {
+      css += `
+        .product-grid {
+          display: flex;
+          flex-wrap: wrap;
+        }
+        
+        .product-grid > li {
+          flex: 1 1 250px;
+        }
+      `;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate device-specific CSS
+   */
+  function generateDeviceCSS(enhancementData) {
+    let css = '';
+
+    if (enhancementData.deviceType === 'mobile') {
+      css = `
+        .product-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        
+        .button {
+          min-height: 44px;
+          min-width: 44px;
+          padding: 0.75rem 1rem;
+        }
+      `;
+    }
+
+    if (enhancementData.deviceType === 'tablet') {
+      css = `
+        @media (min-width: 768px) {
+          .product-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+          }
+        }
+      `;
+    }
+
+    if (enhancementData.deviceType === 'desktop') {
+      css = `
+        @media (min-width: 1024px) {
+          .product-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+          }
+        }
+      `;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate accessible HTML
+   */
+  function generateAccessibleHTML(accessibilityData) {
+    let html = '';
+
+    switch (accessibilityData.featureType) {
+      case 'navigation':
+        html = `
+          <nav role="navigation" aria-label="Main navigation">
+            ${accessibilityData.hasJavaScript ? 
+              '<button class="nav-toggle" aria-expanded="false" aria-label="Toggle menu"></button>' : 
+              ''
+            }
+            <ul class="nav-menu">
+              <li><a href="/" ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}>Home</a></li>
+            </ul>
+          </nav>
+        `;
+        break;
+
+      case 'search':
+        html = `
+          <form role="search" aria-label="Product search">
+            <input type="search" aria-label="Search products" ${accessibilityData.hasJavaScript ? 'aria-describedby="search-help"' : ''} ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}>
+            <button type="submit" ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}>Search</button>
+            ${accessibilityData.hasJavaScript ? '<div id="search-help" class="visually-hidden">Use arrow keys to navigate suggestions</div>' : ''}
+          </form>
+        `;
+        break;
+
+      case 'cart':
+        html = `
+          <${accessibilityData.hasJavaScript ? 'button' : 'a'} 
+            class="cart-button" 
+            aria-label="Shopping cart"
+            ${!accessibilityData.hasJavaScript ? 'href="/cart"' : ''}
+            ${accessibilityData.hasKeyboardOnly ? 'tabindex="0"' : ''}
+          >
+            Cart
+            <span aria-live="polite">0 items</span>
+          </${accessibilityData.hasJavaScript ? 'button' : 'a'}>
+        `;
+        break;
+    }
+
+    return html;
+  }
+
+  /**
+   * Helper function to generate degraded HTML for older browsers
+   */
+  function generateDegradedHTML(browserData) {
+    let html = '<html>';
+
+    if (browserData.browserType === 'legacy') {
+      html += `
+        <nav>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/shop">Shop</a></li>
+            <li><a href="/about">About</a></li>
+          </ul>
+        </nav>
+        <main>
+          <header>
+            <h1>Welcome</h1>
+          </header>
+          <form action="/search" method="get">
+            <input type="text" name="q" placeholder="Search">
+            <button type="submit">Search</button>
+          </form>
+        </main>
+        <footer>
+          <p>Copyright 2026</p>
+        </footer>
+      `;
+    } else if (browserData.browserType === 'minimal') {
+      html += `
+        <nav role="navigation">
+          <ul class="nav-menu">
+            <li><a href="/">Home</a></li>
+            <li><a href="/shop">Shop</a></li>
+          </ul>
+        </nav>
+        <main role="main">
+          <header role="banner">
+            <h1>Welcome</h1>
+          </header>
+        </main>
+        <footer role="contentinfo">
+          <p>Copyright 2026</p>
+        </footer>
+      `;
+    } else {
+      // Modern browser
+      html += `
+        <nav role="navigation" class="js-enabled">
+          <button class="nav-toggle" aria-expanded="false">Menu</button>
+          <ul class="nav-menu">
+            <li><a href="/" tabindex="0">Home</a></li>
+            <li><a href="/shop" tabindex="0">Shop</a></li>
+          </ul>
+        </nav>
+        <main role="main">
+          <header role="banner">
+            <h1>Welcome</h1>
+          </header>
+        </main>
+        <footer role="contentinfo">
+          <p>Copyright 2026</p>
+        </footer>
+      `;
+    }
+
+    html += '</html>';
+    return html;
+  }
+});
+
+/**
+ * **Feature: ecommerce-homepage, Property 12: Mobile responsive design**
+ * **Validates: Requirements 4.1**
+ * 
+ * For any mobile viewport, the homepage should implement fluid layouts 
+ * that adapt appropriately to the screen size
+ */
+describe('Property 12: Mobile responsive design', () => {
+
+  // Arbitrary for generating viewport data
+  const viewportArb = fc.record({
+    width: fc.integer({ min: 320, max: 1920 }),
+    height: fc.integer({ min: 568, max: 1080 }),
+    devicePixelRatio: fc.float({ min: 1, max: 3, noNaN: true }),
+    orientation: fc.constantFrom('portrait', 'landscape'),
+    isMobile: fc.boolean(),
+    isTablet: fc.boolean()
+  }).filter(data => {
+    // Classify devices based on width
+    data.isMobile = data.width <= 768;
+    data.isTablet = data.width > 768 && data.width <= 1024;
+    return true;
+  });
+
+  it('should implement mobile-first responsive breakpoints', () => {
+    fc.assert(fc.property(viewportArb, (viewportData) => {
+      const responsiveCSS = generateResponsiveCSS(viewportData);
+
+      // Should always have base mobile styles
+      expect(responsiveCSS).toContain('/* Base mobile styles */');
+      expect(responsiveCSS).toContain('width: 100%');
+      
+      // Should have mobile-first media queries (min-width) when viewport is large enough
+      if (viewportData.width >= 640) {
+        expect(responsiveCSS).toMatch(/@media\s*\(\s*min-width:\s*\d+px\s*\)/);
+        expect(responsiveCSS).toContain('@media (min-width: 640px)');
+      }
+      
+      if (viewportData.width >= 768) {
+        expect(responsiveCSS).toContain('@media (min-width: 768px)');
+      }
+      
+      if (viewportData.width >= 1024) {
+        expect(responsiveCSS).toContain('@media (min-width: 1024px)');
+      }
+      
+      // Should not use max-width for mobile-first approach
+      expect(responsiveCSS).not.toMatch(/@media\s*\(\s*max-width:\s*\d+px\s*\)/);
+
+    }), { numRuns: 100 });
+  });
+
+  it('should use fluid layouts with CSS Grid and Flexbox', () => {
+    const layoutArb = fc.record({
+      containerType: fc.constantFrom('grid', 'flex'),
+      itemCount: fc.integer({ min: 1, max: 12 }),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasFluidColumns: fc.boolean(),
+      hasFlexibleGaps: fc.boolean()
+    });
+
+    fc.assert(fc.property(layoutArb, (layoutData) => {
+      const layoutCSS = generateFluidLayoutCSS(layoutData);
+
+      if (layoutData.containerType === 'grid') {
+        // Should use CSS Grid with fluid columns
+        expect(layoutCSS).toMatch(/display:\s*grid/);
+        
+        if (layoutData.hasFluidColumns) {
+          expect(layoutCSS).toMatch(/grid-template-columns:\s*repeat\(auto-fit,\s*minmax\(/);
+        }
+        
+        // Should adapt columns based on viewport
+        if (layoutData.viewportWidth <= 640) {
+          expect(layoutCSS).toMatch(/grid-template-columns:\s*1fr/);
+        } else if (layoutData.viewportWidth <= 1024) {
+          expect(layoutCSS).toMatch(/grid-template-columns:\s*repeat\([2-3],\s*1fr\)/);
+        }
+      }
+
+      if (layoutData.containerType === 'flex') {
+        // Should use Flexbox with flexible wrapping
+        expect(layoutCSS).toMatch(/display:\s*flex/);
+        expect(layoutCSS).toMatch(/flex-wrap:\s*wrap/);
+        
+        // Should have flexible gaps
+        if (layoutData.hasFlexibleGaps) {
+          expect(layoutCSS).toMatch(/gap:\s*var\(--space-\w+\)/);
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should implement fluid typography with clamp() functions', () => {
+    const typographyArb = fc.record({
+      textType: fc.constantFrom('heading', 'body', 'caption', 'button'),
+      minSize: fc.float({ min: 0.75, max: 1.5, noNaN: true }),
+      maxSize: fc.float({ min: 1.5, max: 4, noNaN: true }),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasFluidScaling: fc.boolean()
+    }).filter(data => data.maxSize > data.minSize);
+
+    fc.assert(fc.property(typographyArb, (typographyData) => {
+      const typographyCSS = generateFluidTypographyCSS(typographyData);
+
+      if (typographyData.hasFluidScaling) {
+        // Should use clamp() for fluid typography
+        expect(typographyCSS).toMatch(/font-size:\s*clamp\(/);
+        
+        // Should have proper clamp structure: clamp(min, preferred, max)
+        expect(typographyCSS).toMatch(/clamp\(\s*[\d.]+rem,\s*[\d.]+vw\s*\+\s*[\d.]+rem,\s*[\d.]+rem\s*\)/);
+        
+        // Min size should be smaller than max size
+        const clampMatch = typographyCSS.match(/clamp\(\s*([\d.]+)rem,\s*[\d.]+vw\s*\+\s*[\d.]+rem,\s*([\d.]+)rem\s*\)/);
+        if (clampMatch) {
+          const minValue = parseFloat(clampMatch[1]);
+          const maxValue = parseFloat(clampMatch[2]);
+          expect(maxValue).toBeGreaterThan(minValue);
+        }
+      }
+
+      // Should have appropriate font sizes for different text types
+      if (typographyData.textType === 'heading' && typographyData.hasFluidScaling) {
+        expect(typographyCSS).toMatch(/font-size:\s*clamp\([\d.]+rem,\s*[\d.]+vw\s*\+\s*[\d.]+rem,\s*[\d.]+rem\)/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should adapt container widths across viewport sizes', () => {
+    const containerArb = fc.record({
+      containerType: fc.constantFrom('section-container', 'hero-container', 'product-grid'),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasPadding: fc.boolean(),
+      hasMaxWidth: fc.boolean(),
+      isFluid: fc.boolean()
+    });
+
+    fc.assert(fc.property(containerArb, (containerData) => {
+      const containerCSS = generateContainerCSS(containerData);
+
+      // Should have appropriate width constraints
+      if (containerData.hasMaxWidth) {
+        expect(containerCSS).toMatch(/max-width:\s*var\(--container-\w+\)/);
+      }
+
+      // Should have responsive padding
+      if (containerData.hasPadding) {
+        expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-\w+\)/);
+        
+        // Should adapt to viewport size
+        if (containerData.viewportWidth <= 640) {
+          expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-md\)/);
+        } else if (containerData.viewportWidth <= 1024) {
+          expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-lg\)/);
+        } else {
+          expect(containerCSS).toMatch(/padding:\s*0\s*var\(--space-xl\)/);
+        }
+      }
+
+      // Should be fluid by default
+      if (containerData.isFluid) {
+        expect(containerCSS).toMatch(/width:\s*100%/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should maintain proper component proportions across devices', () => {
+    const componentArb = fc.record({
+      componentType: fc.constantFrom('hero-section', 'product-card', 'category-card', 'navigation'),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      aspectRatio: fc.float({ min: 0.5, max: 2, noNaN: true }),
+      hasResponsiveImages: fc.boolean(),
+      hasFlexibleLayout: fc.boolean()
+    });
+
+    fc.assert(fc.property(componentArb, (componentData) => {
+      const componentCSS = generateComponentCSS(componentData);
+
+      // Should maintain appropriate proportions
+      if (componentData.hasResponsiveImages) {
+        expect(componentCSS).toMatch(/aspect-ratio:\s*[\d.\/]+/);
+        expect(componentCSS).toMatch(/object-fit:\s*cover/);
+      }
+
+      // Should have flexible layouts
+      if (componentData.hasFlexibleLayout) {
+        expect(componentCSS).toMatch(/display:\s*(flex|grid)/);
+      }
+
+      // Should adapt layout based on viewport
+      if (componentData.componentType === 'hero-section' && componentData.hasFlexibleLayout) {
+        if (componentData.viewportWidth <= 768) {
+          expect(componentCSS).toMatch(/grid-template-columns:\s*1fr/);
+          expect(componentCSS).toMatch(/text-align:\s*center/);
+        } else {
+          expect(componentCSS).toMatch(/grid-template-columns:\s*1fr\s*1fr/);
+        }
+      }
+
+      if (componentData.componentType === 'navigation' && componentData.hasFlexibleLayout) {
+        if (componentData.viewportWidth <= 768) {
+          expect(componentCSS).toMatch(/flex-direction:\s*column/);
+        } else {
+          expect(componentCSS).toMatch(/flex-direction:\s*row/);
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should implement progressive enhancement for larger screens', () => {
+    const enhancementArb = fc.record({
+      baseFeature: fc.constantFrom('navigation', 'grid-layout', 'typography', 'spacing'),
+      viewportWidth: fc.integer({ min: 320, max: 1920 }),
+      hasEnhancement: fc.boolean(),
+      enhancementType: fc.constantFrom('visual', 'layout', 'interaction', 'performance')
+    });
+
+    fc.assert(fc.property(enhancementArb, (enhancementData) => {
+      const enhancementCSS = generateProgressiveEnhancementCSS(enhancementData);
+
+      // Base styles should work on all devices
+      expect(enhancementCSS).toMatch(/\/\* Base styles \*\//);
+
+      if (enhancementData.hasEnhancement && enhancementData.viewportWidth > 768) {
+        // Should have progressive enhancements for larger screens
+        expect(enhancementCSS).toMatch(/@media\s*\(\s*min-width:\s*\d+px\s*\)/);
+
+        switch (enhancementData.enhancementType) {
+          case 'visual':
+            expect(enhancementCSS).toMatch(/transform|box-shadow|gradient/);
+            break;
+          case 'layout':
+            if (enhancementData.baseFeature === 'navigation' || enhancementData.baseFeature === 'grid-layout') {
+              expect(enhancementCSS).toMatch(/grid-template-columns|flex-direction/);
+            }
+            break;
+          case 'interaction':
+            expect(enhancementCSS).toMatch(/:hover|:focus/);
+            break;
+          case 'performance':
+            expect(enhancementCSS).toMatch(/will-change|contain/);
+            break;
+        }
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  /**
+   * Helper function to generate responsive CSS
+   */
+  function generateResponsiveCSS(viewportData) {
+    let css = `/* Base mobile styles */
+    .container {
+      width: 100%;
+      padding: 0 var(--space-md);
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }`;
+
+    if (viewportData.width >= 640) {
+      css += `
+      
+      @media (min-width: 640px) {
+        .container {
+          padding: 0 var(--space-lg);
+        }
+        
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: var(--space-lg);
+        }
+      }`;
+    }
+
+    if (viewportData.width >= 768) {
+      css += `
+      
+      @media (min-width: 768px) {
+        .container {
+          max-width: var(--container-md);
+          margin: 0 auto;
+          padding: 0 var(--space-xl);
+        }
+      }`;
+    }
+
+    if (viewportData.width >= 1024) {
+      css += `
+      
+      @media (min-width: 1024px) {
+        .container {
+          max-width: var(--container-lg);
+        }
+        
+        .grid {
+          grid-template-columns: repeat(3, 1fr);
+          gap: var(--space-xl);
+        }
+      }`;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate fluid layout CSS
+   */
+  function generateFluidLayoutCSS(layoutData) {
+    let css = '';
+
+    if (layoutData.containerType === 'grid') {
+      css = `.grid-container {
+        display: grid;`;
+
+      if (layoutData.viewportWidth <= 640) {
+        css += `
+        grid-template-columns: 1fr;`;
+      } else if (layoutData.viewportWidth <= 1024) {
+        css += `
+        grid-template-columns: repeat(2, 1fr);`;
+      } else {
+        css += `
+        grid-template-columns: repeat(3, 1fr);`;
+      }
+
+      if (layoutData.hasFluidColumns) {
+        css += `
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));`;
+      }
+
+      if (layoutData.hasFlexibleGaps) {
+        css += `
+        gap: var(--space-lg);`;
+      }
+
+      css += `
+      }`;
+    }
+
+    if (layoutData.containerType === 'flex') {
+      css = `.flex-container {
+        display: flex;
+        flex-wrap: wrap;`;
+
+      if (layoutData.hasFlexibleGaps) {
+        css += `
+        gap: var(--space-md);`;
+      }
+
+      css += `
+      }`;
+    }
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate fluid typography CSS
+   */
+  function generateFluidTypographyCSS(typographyData) {
+    let css = `.${typographyData.textType} {`;
+
+    if (typographyData.hasFluidScaling) {
+      const minSize = typographyData.minSize;
+      const maxSize = typographyData.maxSize;
+      const vwValue = ((maxSize - minSize) * 100 / (1920 - 320)).toFixed(2);
+      const baseValue = (minSize - (320 * parseFloat(vwValue) / 100)).toFixed(2);
+
+      css += `
+      font-size: clamp(${minSize}rem, ${vwValue}vw + ${baseValue}rem, ${maxSize}rem);`;
+    } else {
+      // Fallback static sizes
+      if (typographyData.textType === 'heading') {
+        css += `
+        font-size: 2rem;`;
+      } else {
+        css += `
+        font-size: 1rem;`;
+      }
+    }
+
+    css += `
+    line-height: 1.5;
+    }`;
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate container CSS
+   */
+  function generateContainerCSS(containerData) {
+    let css = `.${containerData.containerType} {
+      width: 100%;`;
+
+    if (containerData.isFluid) {
+      css += `
+      width: 100%;`;
+    }
+
+    if (containerData.hasMaxWidth) {
+      if (containerData.viewportWidth <= 640) {
+        css += `
+        max-width: var(--container-sm);`;
+      } else if (containerData.viewportWidth <= 1024) {
+        css += `
+        max-width: var(--container-md);`;
+      } else {
+        css += `
+        max-width: var(--container-lg);`;
+      }
+    }
+
+    if (containerData.hasPadding) {
+      if (containerData.viewportWidth <= 640) {
+        css += `
+        padding: 0 var(--space-md);`;
+      } else if (containerData.viewportWidth <= 1024) {
+        css += `
+        padding: 0 var(--space-lg);`;
+      } else {
+        css += `
+        padding: 0 var(--space-xl);`;
+      }
+    }
+
+    css += `
+      margin: 0 auto;
+    }`;
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate component CSS
+   */
+  function generateComponentCSS(componentData) {
+    let css = `.${componentData.componentType} {`;
+
+    if (componentData.hasFlexibleLayout) {
+      if (componentData.componentType === 'hero-section') {
+        css += `
+        display: grid;`;
+        
+        if (componentData.viewportWidth <= 768) {
+          css += `
+          grid-template-columns: 1fr;
+          text-align: center;`;
+        } else {
+          css += `
+          grid-template-columns: 1fr 1fr;
+          text-align: left;`;
+        }
+      } else if (componentData.componentType === 'navigation') {
+        css += `
+        display: flex;`;
+        
+        if (componentData.viewportWidth <= 768) {
+          css += `
+          flex-direction: column;`;
+        } else {
+          css += `
+          flex-direction: row;`;
+        }
+      } else if (componentData.componentType === 'product-card' || componentData.componentType === 'category-card') {
+        css += `
+        display: flex;
+        flex-direction: column;`;
+      }
+    }
+
+    if (componentData.hasResponsiveImages) {
+      css += `
+      aspect-ratio: ${componentData.aspectRatio};
+      object-fit: cover;`;
+    }
+
+    css += `
+    }`;
+
+    return css;
+  }
+
+  /**
+   * Helper function to generate progressive enhancement CSS
+   */
+  function generateProgressiveEnhancementCSS(enhancementData) {
+    let css = `/* Base styles */
+    .${enhancementData.baseFeature} {
+      /* Core functionality that works everywhere */`;
+
+    switch (enhancementData.baseFeature) {
+      case 'navigation':
+        css += `
+        display: flex;
+        flex-direction: column;`;
+        break;
+      case 'grid-layout':
+        css += `
+        display: block;`;
+        break;
+      case 'typography':
+        css += `
+        font-size: 1rem;`;
+        break;
+      case 'spacing':
+        css += `
+        margin: 1rem 0;`;
+        break;
+    }
+
+    css += `
+    }`;
+
+    if (enhancementData.hasEnhancement && enhancementData.viewportWidth > 768) {
+      css += `
+      
+      @media (min-width: 769px) {
+        .${enhancementData.baseFeature} {`;
+
+      switch (enhancementData.enhancementType) {
+        case 'visual':
+          css += `
+          transform: perspective(1000px) rotateY(-2deg);
+          box-shadow: var(--shadow-xl);`;
+          break;
+        case 'layout':
+          if (enhancementData.baseFeature === 'navigation') {
+            css += `
+            flex-direction: row;`;
+          } else if (enhancementData.baseFeature === 'grid-layout') {
+            css += `
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));`;
+          }
+          break;
+        case 'interaction':
+          css += `
+          transition: all 0.3s ease;
+          }
+          
+          .${enhancementData.baseFeature}:hover {
+            transform: translateY(-2px);`;
+          break;
+        case 'performance':
+          css += `
+          will-change: transform;
+          contain: layout style paint;`;
+          break;
+      }
+
+      css += `
+        }
+      }`;
+    }
+
+    return css;
+  }
+});
+
+/**
+ * **Feature: ecommerce-homepage, Property 18: Cart access functionality**
+ * **Validates: Requirements 5.2**
+ * 
+ * For any cart icon interaction, it should provide quick access to cart contents and checkout process
+ */
+describe('Property 18: Cart access functionality', () => {
+
+  // Mock cart data generator
+  const cartItemArb = fc.record({
+    id: fc.integer({ min: 1, max: 1000 }),
+    name: fc.string({ minLength: 1, maxLength: 50 }).filter(s => s.trim().length > 0),
+    price: fc.float({ min: Math.fround(0.01), max: Math.fround(999.99), noNaN: true }),
+    salePrice: fc.option(fc.float({ min: Math.fround(0.01), max: Math.fround(999.99), noNaN: true }), { nil: null }),
+    quantity: fc.integer({ min: 1, max: 10 }),
+    imageUrl: fc.webUrl()
+  });
+
+  const cartStateArb = fc.record({
+    items: fc.array(cartItemArb, { maxLength: 20 }),
+    isLoggedIn: fc.boolean(),
+    hasShippingInfo: fc.boolean()
+  });
+
+  // Mock cart dropdown creation
+  const createCartDropdown = (cartState) => {
+    const totalItems = cartState.items.reduce((sum, item) => sum + item.quantity, 0);
+    const totalPrice = cartState.items.reduce((sum, item) => {
+      const price = item.salePrice || item.price;
+      return sum + (price * item.quantity);
+    }, 0);
+
+    return {
+      element: {
+        id: 'cart-dropdown',
+        className: 'cart-dropdown cart-dropdown--visible',
+        role: 'dialog',
+        ariaLabel: 'Shopping cart'
+      },
+      header: {
+        className: 'cart-dropdown__header',
+        content: `Shopping Cart (${totalItems})`
+      },
+      items: cartState.items.map(item => ({
+        className: 'cart-dropdown__item',
+        productName: item.name,
+        price: (item.salePrice || item.price).toFixed(2),
+        quantity: item.quantity,
+        removeButton: {
+          className: 'cart-item__remove',
+          ariaLabel: `Remove ${item.name}`,
+          dataProductId: item.id.toString()
+        }
+      })),
+      footer: {
+        className: 'cart-dropdown__footer',
+        total: {
+          className: 'cart-dropdown__total',
+          content: `Total: $${totalPrice.toFixed(2)}`
+        },
+        actions: {
+          viewCart: {
+            className: 'button button--secondary',
+            href: '/cart',
+            content: 'View Cart'
+          },
+          checkout: {
+            className: 'button button--primary',
+            href: '/checkout',
+            content: 'Checkout'
+          }
+        }
+      },
+      isEmpty: totalItems === 0,
+      totalItems,
+      totalPrice
+    };
+  };
+
+  it('should provide quick access to cart contents when cart icon is clicked', () => {
+    fc.assert(fc.property(cartStateArb, (cartState) => {
+      const dropdown = createCartDropdown(cartState);
+
+      // Cart dropdown must have proper accessibility attributes
+      expect(dropdown.element.id).toBe('cart-dropdown');
+      expect(dropdown.element.className).toContain('cart-dropdown');
+      expect(dropdown.element.role).toBe('dialog');
+      expect(dropdown.element.ariaLabel).toBe('Shopping cart');
+
+      // Header must display item count
+      expect(dropdown.header.className).toBe('cart-dropdown__header');
+      expect(dropdown.header.content).toContain(`Shopping Cart (${dropdown.totalItems})`);
+
+      if (dropdown.isEmpty) {
+        // Empty cart should show appropriate message and shopping link
+        expect(dropdown.totalItems).toBe(0);
+        expect(dropdown.totalPrice).toBe(0);
+      } else {
+        // Non-empty cart should display all items
+        expect(dropdown.items.length).toBe(cartState.items.length);
+        expect(dropdown.totalItems).toBeGreaterThan(0);
+        expect(dropdown.totalPrice).toBeGreaterThan(0);
+
+        // Each item should have required elements
+        dropdown.items.forEach((item, index) => {
+          const originalItem = cartState.items[index];
+          
+          expect(item.className).toBe('cart-dropdown__item');
+          expect(item.productName).toBe(originalItem.name);
+          expect(item.quantity).toBe(originalItem.quantity);
+          expect(parseFloat(item.price)).toBeCloseTo(originalItem.salePrice || originalItem.price, 2);
+          
+          // Remove button must be accessible
+          expect(item.removeButton.className).toBe('cart-item__remove');
+          expect(item.removeButton.ariaLabel).toBe(`Remove ${originalItem.name}`);
+          expect(item.removeButton.dataProductId).toBe(originalItem.id.toString());
+        });
+
+        // Footer must contain total and action buttons
+        expect(dropdown.footer.className).toBe('cart-dropdown__footer');
+        expect(dropdown.footer.total.content).toBe(`Total: $${dropdown.totalPrice.toFixed(2)}`);
+        
+        // Action buttons must provide checkout access
+        expect(dropdown.footer.actions.viewCart.className).toBe('button button--secondary');
+        expect(dropdown.footer.actions.viewCart.href).toBe('/cart');
+        expect(dropdown.footer.actions.viewCart.content).toBe('View Cart');
+        
+        expect(dropdown.footer.actions.checkout.className).toBe('button button--primary');
+        expect(dropdown.footer.actions.checkout.href).toBe('/checkout');
+        expect(dropdown.footer.actions.checkout.content).toBe('Checkout');
+      }
+
+      return true;
+    }), { numRuns: 100 });
+  });
+
+  it('should calculate cart totals correctly for quick access display', () => {
+    fc.assert(fc.property(
+      fc.array(cartItemArb, { minLength: 1, maxLength: 10 }),
+      (items) => {
+        const cartState = { items, isLoggedIn: true, hasShippingInfo: true };
+        const dropdown = createCartDropdown(cartState);
+
+        // Calculate expected totals
+        const expectedItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+        const expectedTotal = items.reduce((sum, item) => {
+          const price = item.salePrice || item.price;
+          return sum + (price * item.quantity);
+        }, 0);
+
+        // Verify calculations
+        expect(dropdown.totalItems).toBe(expectedItemCount);
+        expect(dropdown.totalPrice).toBeCloseTo(expectedTotal, 2);
+        expect(dropdown.footer.total.content).toBe(`Total: $${expectedTotal.toFixed(2)}`);
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should provide consistent checkout process access regardless of cart state', () => {
+    fc.assert(fc.property(cartStateArb, (cartState) => {
+      const dropdown = createCartDropdown(cartState);
+
+      if (!dropdown.isEmpty) {
+        // Non-empty cart must always provide checkout access
+        expect(dropdown.footer.actions.checkout).toBeDefined();
+        expect(dropdown.footer.actions.checkout.href).toBe('/checkout');
+        expect(dropdown.footer.actions.checkout.className).toContain('button--primary');
+        
+        // View cart link must also be available
+        expect(dropdown.footer.actions.viewCart).toBeDefined();
+        expect(dropdown.footer.actions.viewCart.href).toBe('/cart');
+        expect(dropdown.footer.actions.viewCart.className).toContain('button--secondary');
+      }
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain accessibility standards for cart access interface', () => {
+    fc.assert(fc.property(cartStateArb, (cartState) => {
+      const dropdown = createCartDropdown(cartState);
+
+      // Dialog must have proper ARIA attributes
+      expect(dropdown.element.role).toBe('dialog');
+      expect(dropdown.element.ariaLabel).toBeTruthy();
+      expect(dropdown.element.id).toBeTruthy();
+
+      // All interactive elements must be accessible
+      if (!dropdown.isEmpty) {
+        dropdown.items.forEach(item => {
+          // Remove buttons must have descriptive labels
+          expect(item.removeButton.ariaLabel).toContain('Remove');
+          expect(item.removeButton.ariaLabel).toContain(item.productName);
+          expect(item.removeButton.dataProductId).toBeTruthy();
+        });
+
+        // Action buttons must be properly labeled
+        expect(dropdown.footer.actions.viewCart.content).toBeTruthy();
+        expect(dropdown.footer.actions.checkout.content).toBeTruthy();
+      }
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should handle empty cart state appropriately for quick access', () => {
+    fc.assert(fc.property(
+      fc.constant({ items: [], isLoggedIn: fc.boolean(), hasShippingInfo: fc.boolean() }),
+      (emptyCartState) => {
+        const dropdown = createCartDropdown(emptyCartState);
+
+        // Empty cart properties
+        expect(dropdown.isEmpty).toBe(true);
+        expect(dropdown.totalItems).toBe(0);
+        expect(dropdown.totalPrice).toBe(0);
+        expect(dropdown.items.length).toBe(0);
+
+        // Should still maintain proper structure
+        expect(dropdown.element.role).toBe('dialog');
+        expect(dropdown.element.ariaLabel).toBe('Shopping cart');
+        expect(dropdown.header.content).toContain('Shopping Cart (0)');
+
+        return true;
+      }
+    ), { numRuns: 20 });
+  });
+
+  it('should provide quick access to individual item management', () => {
+    fc.assert(fc.property(
+      fc.array(cartItemArb, { minLength: 1, maxLength: 5 }),
+      (items) => {
+        const cartState = { items, isLoggedIn: true, hasShippingInfo: true };
+        const dropdown = createCartDropdown(cartState);
+
+        // Each item must provide removal functionality
+        dropdown.items.forEach((dropdownItem, index) => {
+          const originalItem = items[index];
+          
+          // Item display must include essential information
+          expect(dropdownItem.productName).toBe(originalItem.name);
+          expect(dropdownItem.quantity).toBe(originalItem.quantity);
+          expect(parseFloat(dropdownItem.price)).toBeCloseTo(originalItem.salePrice || originalItem.price, 2);
+          
+          // Remove functionality must be accessible
+          expect(dropdownItem.removeButton.className).toBe('cart-item__remove');
+          expect(dropdownItem.removeButton.dataProductId).toBe(originalItem.id.toString());
+          expect(dropdownItem.removeButton.ariaLabel).toContain(originalItem.name);
+        });
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should maintain consistent interface structure across different cart states', () => {
+    fc.assert(fc.property(
+      cartStateArb,
+      cartStateArb,
+      (cartState1, cartState2) => {
+        const dropdown1 = createCartDropdown(cartState1);
+        const dropdown2 = createCartDropdown(cartState2);
+
+        // Core structure should remain consistent
+        expect(dropdown1.element.className).toContain('cart-dropdown');
+        expect(dropdown2.element.className).toContain('cart-dropdown');
+        
+        expect(dropdown1.element.role).toBe(dropdown2.element.role);
+        expect(dropdown1.element.ariaLabel).toBe(dropdown2.element.ariaLabel);
+        
+        expect(dropdown1.header.className).toBe(dropdown2.header.className);
+        
+        // Non-empty carts should have consistent footer structure
+        if (!dropdown1.isEmpty && !dropdown2.isEmpty) {
+          expect(dropdown1.footer.className).toBe(dropdown2.footer.className);
+          expect(dropdown1.footer.actions.viewCart.className).toBe(dropdown2.footer.actions.viewCart.className);
+          expect(dropdown1.footer.actions.checkout.className).toBe(dropdown2.footer.actions.checkout.className);
+        }
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+});
+/**
+ * **Feature: ecommerce-homepage, Property 19: User personalization**
+ * **Validates: Requirements 5.3**
+ * 
+ * For any logged-in user, the homepage should display personalized account access and user-specific recommendations
+ */
+describe('Property 19: User personalization', () => {
+
+  // Mock user data generator
+  const userDataArb = fc.record({
+    id: fc.integer({ min: 1, max: 10000 }),
+    name: fc.string({ minLength: 2, maxLength: 50 }).filter(s => s.trim().length > 0),
+    email: fc.emailAddress(),
+    preferences: fc.record({
+      theme: fc.constantFrom('light', 'dark', 'auto'),
+      language: fc.constantFrom('en', 'es', 'fr', 'de'),
+      currency: fc.constantFrom('USD', 'EUR', 'GBP', 'CAD'),
+      categories: fc.array(fc.string({ minLength: 3, maxLength: 20 }), { maxLength: 5 }),
+      notifications: fc.boolean()
+    }),
+    isLoggedIn: fc.constant(true),
+    authToken: fc.string({ minLength: 32, maxLength: 64 })
+  });
+
+  const recommendationArb = fc.record({
+    id: fc.integer({ min: 1, max: 1000 }),
+    name: fc.string({ minLength: 5, maxLength: 50 }).filter(s => s.trim().length > 0),
+    price: fc.float({ min: Math.fround(1.00), max: Math.fround(999.99), noNaN: true }),
+    category: fc.string({ minLength: 3, maxLength: 20 }),
+    image: fc.webUrl(),
+    relevanceScore: fc.float({ min: Math.fround(0.1), max: Math.fround(1.0), noNaN: true })
+  });
+
+  // Mock personalized homepage creation
+  const createPersonalizedHomepage = (user, recommendations = []) => {
+    return {
+      user: user,
+      isLoggedIn: user.isLoggedIn,
+      accountAccess: {
+        userGreeting: {
+          className: 'user-greeting',
+          textContent: `Hello, ${user.name || user.email.split('@')[0]}!`,
+          visible: true
+        },
+        userAccount: {
+          className: 'user-account user-account--logged-in',
+          ariaLabel: `User account: ${user.name || user.email}`,
+          visible: true
+        },
+        loginButton: {
+          className: 'login-button',
+          visible: false
+        },
+        logoutButton: {
+          className: 'logout-button',
+          visible: true
+        },
+        userMenu: {
+          className: 'user-menu',
+          items: [
+            { text: 'My Account', href: '/account' },
+            { text: 'Order History', href: '/orders' },
+            { text: 'Preferences', href: '/preferences' },
+            { text: 'Logout', action: 'logout' }
+          ]
+        }
+      },
+      personalizedContent: {
+        className: 'personalized-content personalized-content--active',
+        visible: true,
+        recommendations: {
+          section: {
+            className: 'recommendations-section',
+            visible: recommendations.length > 0
+          },
+          header: {
+            className: 'recommendations-header',
+            title: 'Recommended for You'
+          },
+          items: recommendations.map(rec => ({
+            id: rec.id,
+            className: 'recommendation-card',
+            name: rec.name,
+            price: rec.price,
+            category: rec.category,
+            image: rec.image,
+            relevanceScore: rec.relevanceScore,
+            actionButton: {
+              className: 'recommendation-card__action',
+              text: 'Add to Cart',
+              dataProductId: rec.id.toString()
+            }
+          }))
+        }
+      },
+      appliedPreferences: {
+        theme: user.preferences.theme,
+        language: user.preferences.language,
+        currency: user.preferences.currency,
+        categories: user.preferences.categories,
+        notifications: user.preferences.notifications
+      }
+    };
+  };
+
+  it('should display personalized account access for logged-in users', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // User must be logged in
+      expect(homepage.isLoggedIn).toBe(true);
+      expect(homepage.user.isLoggedIn).toBe(true);
+
+      // Account access elements must be properly configured
+      const { accountAccess } = homepage;
+
+      // User greeting must be visible and personalized
+      expect(accountAccess.userGreeting.visible).toBe(true);
+      expect(accountAccess.userGreeting.className).toBe('user-greeting');
+      expect(accountAccess.userGreeting.textContent).toContain('Hello');
+      expect(accountAccess.userGreeting.textContent).toContain(user.name || user.email.split('@')[0]);
+
+      // User account element must show logged-in state
+      expect(accountAccess.userAccount.visible).toBe(true);
+      expect(accountAccess.userAccount.className).toContain('user-account--logged-in');
+      expect(accountAccess.userAccount.ariaLabel).toContain(user.name || user.email);
+
+      // Login button must be hidden, logout button visible
+      expect(accountAccess.loginButton.visible).toBe(false);
+      expect(accountAccess.logoutButton.visible).toBe(true);
+
+      // User menu must contain account-related options
+      expect(accountAccess.userMenu.items.length).toBeGreaterThan(0);
+      const menuTexts = accountAccess.userMenu.items.map(item => item.text);
+      expect(menuTexts).toContain('My Account');
+      expect(menuTexts).toContain('Logout');
+
+      return true;
+    }), { numRuns: 100 });
+  });
+
+  it('should display user-specific recommendations for logged-in users', () => {
+    fc.assert(fc.property(
+      userDataArb,
+      fc.array(recommendationArb, { minLength: 1, maxLength: 8 }),
+      (user, recommendations) => {
+        const homepage = createPersonalizedHomepage(user, recommendations);
+
+        // Personalized content must be active
+        expect(homepage.personalizedContent.visible).toBe(true);
+        expect(homepage.personalizedContent.className).toContain('personalized-content--active');
+
+        // Recommendations section must be visible when recommendations exist
+        const { recommendations: recSection } = homepage.personalizedContent;
+        expect(recSection.section.visible).toBe(true);
+        expect(recSection.section.className).toBe('recommendations-section');
+
+        // Header must indicate personalization
+        expect(recSection.header.title).toBe('Recommended for You');
+
+        // Each recommendation must have required elements
+        expect(recSection.items.length).toBe(recommendations.length);
+        
+        recSection.items.forEach((item, index) => {
+          const originalRec = recommendations[index];
+          
+          expect(item.id).toBe(originalRec.id);
+          expect(item.className).toBe('recommendation-card');
+          expect(item.name).toBe(originalRec.name);
+          expect(item.price).toBeCloseTo(originalRec.price, 2);
+          expect(item.category).toBe(originalRec.category);
+          expect(item.image).toBe(originalRec.image);
+          expect(item.relevanceScore).toBeCloseTo(originalRec.relevanceScore, 2);
+          
+          // Action button must be properly configured
+          expect(item.actionButton.className).toBe('recommendation-card__action');
+          expect(item.actionButton.text).toBe('Add to Cart');
+          expect(item.actionButton.dataProductId).toBe(originalRec.id.toString());
+        });
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should apply user preferences to personalized interface', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // User preferences must be applied
+      const { appliedPreferences } = homepage;
+      
+      expect(appliedPreferences.theme).toBe(user.preferences.theme);
+      expect(appliedPreferences.language).toBe(user.preferences.language);
+      expect(appliedPreferences.currency).toBe(user.preferences.currency);
+      expect(appliedPreferences.notifications).toBe(user.preferences.notifications);
+
+      // Theme preference must be valid
+      expect(['light', 'dark', 'auto']).toContain(appliedPreferences.theme);
+
+      // Language preference must be valid
+      expect(['en', 'es', 'fr', 'de']).toContain(appliedPreferences.language);
+
+      // Currency preference must be valid
+      expect(['USD', 'EUR', 'GBP', 'CAD']).toContain(appliedPreferences.currency);
+
+      // Notifications preference must be boolean
+      expect(typeof appliedPreferences.notifications).toBe('boolean');
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain consistent personalization across different user states', () => {
+    fc.assert(fc.property(
+      userDataArb,
+      userDataArb,
+      (user1, user2) => {
+        const homepage1 = createPersonalizedHomepage(user1);
+        const homepage2 = createPersonalizedHomepage(user2);
+
+        // Both should show logged-in state
+        expect(homepage1.isLoggedIn).toBe(true);
+        expect(homepage2.isLoggedIn).toBe(true);
+
+        // Account access structure should be consistent
+        expect(homepage1.accountAccess.userGreeting.className).toBe(homepage2.accountAccess.userGreeting.className);
+        expect(homepage1.accountAccess.userAccount.className).toContain('user-account--logged-in');
+        expect(homepage2.accountAccess.userAccount.className).toContain('user-account--logged-in');
+
+        // Both should have personalized content active
+        expect(homepage1.personalizedContent.className).toContain('personalized-content--active');
+        expect(homepage2.personalizedContent.className).toContain('personalized-content--active');
+
+        // User menu structure should be consistent
+        expect(homepage1.accountAccess.userMenu.items.length).toBe(homepage2.accountAccess.userMenu.items.length);
+
+        // But content should be personalized to each user
+        expect(homepage1.accountAccess.userGreeting.textContent).not.toBe(homepage2.accountAccess.userGreeting.textContent);
+        expect(homepage1.accountAccess.userAccount.ariaLabel).not.toBe(homepage2.accountAccess.userAccount.ariaLabel);
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should handle empty recommendations gracefully for logged-in users', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user, []); // No recommendations
+
+      // User should still be logged in with account access
+      expect(homepage.isLoggedIn).toBe(true);
+      expect(homepage.accountAccess.userGreeting.visible).toBe(true);
+      expect(homepage.accountAccess.userAccount.visible).toBe(true);
+
+      // Personalized content should still be active
+      expect(homepage.personalizedContent.visible).toBe(true);
+      expect(homepage.personalizedContent.className).toContain('personalized-content--active');
+
+      // Recommendations section should be hidden when empty
+      expect(homepage.personalizedContent.recommendations.section.visible).toBe(false);
+      expect(homepage.personalizedContent.recommendations.items.length).toBe(0);
+
+      // Preferences should still be applied
+      expect(homepage.appliedPreferences.theme).toBeTruthy();
+      expect(homepage.appliedPreferences.language).toBeTruthy();
+      expect(homepage.appliedPreferences.currency).toBeTruthy();
+
+      return true;
+    }), { numRuns: 30 });
+  });
+
+  it('should prioritize high-relevance recommendations for personalized display', () => {
+    fc.assert(fc.property(
+      userDataArb,
+      fc.array(recommendationArb, { minLength: 3, maxLength: 10 }),
+      (user, recommendations) => {
+        // Sort recommendations by relevance score (descending)
+        const sortedRecommendations = [...recommendations].sort((a, b) => b.relevanceScore - a.relevanceScore);
+        const homepage = createPersonalizedHomepage(user, sortedRecommendations);
+
+        const displayedRecs = homepage.personalizedContent.recommendations.items;
+
+        // Recommendations should maintain relevance order
+        for (let i = 0; i < displayedRecs.length - 1; i++) {
+          expect(displayedRecs[i].relevanceScore).toBeGreaterThanOrEqual(displayedRecs[i + 1].relevanceScore);
+        }
+
+        // All recommendations should have valid relevance scores
+        displayedRecs.forEach(rec => {
+          expect(rec.relevanceScore).toBeGreaterThan(0);
+          expect(rec.relevanceScore).toBeLessThanOrEqual(1);
+        });
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should provide accessible personalized interface elements', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // Account access must have proper ARIA labels
+      expect(homepage.accountAccess.userAccount.ariaLabel).toBeTruthy();
+      expect(homepage.accountAccess.userAccount.ariaLabel).toContain('User account');
+
+      // User greeting must be visible to screen readers
+      expect(homepage.accountAccess.userGreeting.visible).toBe(true);
+      expect(homepage.accountAccess.userGreeting.textContent).toBeTruthy();
+
+      // User menu items must have proper navigation structure
+      homepage.accountAccess.userMenu.items.forEach(item => {
+        expect(item.text).toBeTruthy();
+        expect(item.href || item.action).toBeTruthy();
+      });
+
+      // Recommendation action buttons must have proper labels
+      homepage.personalizedContent.recommendations.items.forEach(item => {
+        expect(item.actionButton.text).toBeTruthy();
+        expect(item.actionButton.dataProductId).toBeTruthy();
+      });
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain user identity consistency across personalized elements', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // User identity should be consistent across all personalized elements
+      const displayName = user.name || user.email.split('@')[0];
+      
+      expect(homepage.accountAccess.userGreeting.textContent).toContain(displayName);
+      expect(homepage.accountAccess.userAccount.ariaLabel).toContain(user.name || user.email);
+
+      // User object should match original data
+      expect(homepage.user.id).toBe(user.id);
+      expect(homepage.user.name).toBe(user.name);
+      expect(homepage.user.email).toBe(user.email);
+      expect(homepage.user.isLoggedIn).toBe(user.isLoggedIn);
+
+      // Applied preferences should match user preferences
+      Object.keys(user.preferences).forEach(key => {
+        expect(homepage.appliedPreferences[key]).toBe(user.preferences[key]);
+      });
+
+      return true;
+    }), { numRuns: 50 });
+  });
+});
+/**
+ * **Feature: ecommerce-homepage, Property 20: Preference persistence**
+ * **Validates: Requirements 5.4**
+ * 
+ * For any user with saved preferences, the homepage should remember and apply previous settings and preferences
+ */
+describe('Property 20: Preference persistence', () => {
+
+  // Mock preference data generator
+  const preferenceArb = fc.record({
+    theme: fc.constantFrom('light', 'dark', 'auto'),
+    language: fc.constantFrom('en', 'es', 'fr', 'de', 'it', 'pt'),
+    currency: fc.constantFrom('USD', 'EUR', 'GBP', 'CAD', 'JPY', 'AUD'),
+    notifications: fc.boolean(),
+    categories: fc.array(fc.string({ minLength: 3, maxLength: 20 }), { maxLength: 8 }),
+    priceRange: fc.record({
+      min: fc.float({ min: Math.fround(0), max: Math.fround(100), noNaN: true }),
+      max: fc.float({ min: Math.fround(100), max: Math.fround(1000), noNaN: true })
+    }),
+    brands: fc.array(fc.string({ minLength: 2, maxLength: 30 }), { maxLength: 10 }),
+    layout: fc.constantFrom('grid', 'list', 'compact'),
+    itemsPerPage: fc.constantFrom(12, 24, 48, 96)
+  });
+
+  const sessionArb = fc.record({
+    isLoggedIn: fc.boolean(),
+    userId: fc.option(fc.integer({ min: 1, max: 10000 }), { nil: null }),
+    authToken: fc.option(fc.string({ minLength: 32, maxLength: 64 }), { nil: null }),
+    sessionTimestamp: fc.integer({ min: Date.now() - 86400000, max: Date.now() }) // Last 24 hours
+  });
+
+  // Mock preference persistence system
+  const createPreferencePersistenceSystem = (preferences, session) => {
+    const storageKey = session.isLoggedIn ? `user_preferences_${session.userId}` : 'anonymous_preferences';
+    
+    return {
+      session: session,
+      preferences: preferences,
+      storageKey: storageKey,
+      persistence: {
+        localStorage: {
+          key: session.isLoggedIn ? null : 'user_preferences', // Anonymous users use localStorage
+          data: session.isLoggedIn ? null : preferences
+        },
+        apiStorage: {
+          endpoint: session.isLoggedIn ? `/api/user/${session.userId}/preferences` : null,
+          data: session.isLoggedIn ? preferences : null,
+          authToken: session.authToken
+        }
+      },
+      appliedSettings: {
+        documentElement: {
+          attributes: {
+            'data-theme': preferences.theme,
+            'lang': preferences.language,
+            'data-currency': preferences.currency,
+            'data-notifications': preferences.notifications ? 'enabled' : 'disabled'
+          }
+        },
+        interface: {
+          theme: preferences.theme,
+          language: preferences.language,
+          currency: preferences.currency,
+          notifications: preferences.notifications,
+          layout: preferences.layout,
+          itemsPerPage: preferences.itemsPerPage
+        },
+        filters: {
+          categories: preferences.categories,
+          priceRange: preferences.priceRange,
+          brands: preferences.brands
+        }
+      },
+      loadedFromStorage: true,
+      savedToStorage: true,
+      lastSyncTimestamp: Date.now()
+    };
+  };
+
+  it('should persist and restore user preferences across sessions', () => {
+    fc.assert(fc.property(
+      preferenceArb,
+      sessionArb,
+      (preferences, session) => {
+        const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+        // Preferences must be properly stored
+        if (session.isLoggedIn) {
+          // Logged-in users: API storage
+          expect(persistenceSystem.persistence.apiStorage.endpoint).toBeTruthy();
+          expect(persistenceSystem.persistence.apiStorage.data).toEqual(preferences);
+          expect(persistenceSystem.persistence.apiStorage.authToken).toBe(session.authToken);
+          expect(persistenceSystem.persistence.localStorage.data).toBeNull();
+        } else {
+          // Anonymous users: localStorage
+          expect(persistenceSystem.persistence.localStorage.key).toBe('user_preferences');
+          expect(persistenceSystem.persistence.localStorage.data).toEqual(preferences);
+          expect(persistenceSystem.persistence.apiStorage.endpoint).toBeNull();
+        }
+
+        // Preferences must be applied to interface
+        const { appliedSettings } = persistenceSystem;
+        
+        expect(appliedSettings.interface.theme).toBe(preferences.theme);
+        expect(appliedSettings.interface.language).toBe(preferences.language);
+        expect(appliedSettings.interface.currency).toBe(preferences.currency);
+        expect(appliedSettings.interface.notifications).toBe(preferences.notifications);
+        expect(appliedSettings.interface.layout).toBe(preferences.layout);
+        expect(appliedSettings.interface.itemsPerPage).toBe(preferences.itemsPerPage);
+
+        // Document attributes must reflect preferences
+        expect(appliedSettings.documentElement.attributes['data-theme']).toBe(preferences.theme);
+        expect(appliedSettings.documentElement.attributes['lang']).toBe(preferences.language);
+        expect(appliedSettings.documentElement.attributes['data-currency']).toBe(preferences.currency);
+        expect(appliedSettings.documentElement.attributes['data-notifications']).toBe(
+          preferences.notifications ? 'enabled' : 'disabled'
+        );
+
+        // Filters must be preserved
+        expect(appliedSettings.filters.categories).toEqual(preferences.categories);
+        expect(appliedSettings.filters.priceRange).toEqual(preferences.priceRange);
+        expect(appliedSettings.filters.brands).toEqual(preferences.brands);
+
+        // System must indicate successful persistence
+        expect(persistenceSystem.loadedFromStorage).toBe(true);
+        expect(persistenceSystem.savedToStorage).toBe(true);
+        expect(persistenceSystem.lastSyncTimestamp).toBeGreaterThan(0);
+
+        return true;
+      }
+    ), { numRuns: 100 });
+  });
+
+  it('should handle preference updates and maintain persistence', () => {
+    fc.assert(fc.property(
+      preferenceArb,
+      preferenceArb,
+      sessionArb,
+      (initialPreferences, updatedPreferences, session) => {
+        // Start with initial preferences
+        const initialSystem = createPreferencePersistenceSystem(initialPreferences, session);
+        
+        // Update preferences
+        const updatedSystem = createPreferencePersistenceSystem(updatedPreferences, session);
+
+        // Storage mechanism should remain consistent
+        expect(initialSystem.persistence.localStorage.key).toBe(updatedSystem.persistence.localStorage.key);
+        expect(initialSystem.persistence.apiStorage.endpoint).toBe(updatedSystem.persistence.apiStorage.endpoint);
+
+        // Updated preferences should be properly stored
+        if (session.isLoggedIn) {
+          expect(updatedSystem.persistence.apiStorage.data).toEqual(updatedPreferences);
+        } else {
+          expect(updatedSystem.persistence.localStorage.data).toEqual(updatedPreferences);
+        }
+
+        // Applied settings should reflect updates
+        expect(updatedSystem.appliedSettings.interface.theme).toBe(updatedPreferences.theme);
+        expect(updatedSystem.appliedSettings.interface.language).toBe(updatedPreferences.language);
+        expect(updatedSystem.appliedSettings.interface.currency).toBe(updatedPreferences.currency);
+
+        // Document attributes should be updated
+        expect(updatedSystem.appliedSettings.documentElement.attributes['data-theme']).toBe(updatedPreferences.theme);
+        expect(updatedSystem.appliedSettings.documentElement.attributes['lang']).toBe(updatedPreferences.language);
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should maintain preference consistency across different storage mechanisms', () => {
+    fc.assert(fc.property(
+      preferenceArb,
+      (preferences) => {
+        // Test both logged-in and anonymous sessions
+        const loggedInSession = { isLoggedIn: true, userId: 123, authToken: 'token123', sessionTimestamp: Date.now() };
+        const anonymousSession = { isLoggedIn: false, userId: null, authToken: null, sessionTimestamp: Date.now() };
+
+        const loggedInSystem = createPreferencePersistenceSystem(preferences, loggedInSession);
+        const anonymousSystem = createPreferencePersistenceSystem(preferences, anonymousSession);
+
+        // Applied settings should be identical regardless of storage mechanism
+        expect(loggedInSystem.appliedSettings.interface).toEqual(anonymousSystem.appliedSettings.interface);
+        expect(loggedInSystem.appliedSettings.documentElement).toEqual(anonymousSystem.appliedSettings.documentElement);
+        expect(loggedInSystem.appliedSettings.filters).toEqual(anonymousSystem.appliedSettings.filters);
+
+        // Both should indicate successful persistence
+        expect(loggedInSystem.loadedFromStorage).toBe(true);
+        expect(loggedInSystem.savedToStorage).toBe(true);
+        expect(anonymousSystem.loadedFromStorage).toBe(true);
+        expect(anonymousSystem.savedToStorage).toBe(true);
+
+        // Storage mechanisms should be different but both functional
+        expect(loggedInSystem.persistence.apiStorage.endpoint).toBeTruthy();
+        expect(loggedInSystem.persistence.localStorage.data).toBeNull();
+        expect(anonymousSystem.persistence.localStorage.data).toBeTruthy();
+        expect(anonymousSystem.persistence.apiStorage.endpoint).toBeNull();
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should validate preference data integrity during persistence', () => {
+    fc.assert(fc.property(preferenceArb, sessionArb, (preferences, session) => {
+      const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+      // Theme preference must be valid
+      expect(['light', 'dark', 'auto']).toContain(persistenceSystem.preferences.theme);
+      expect(['light', 'dark', 'auto']).toContain(persistenceSystem.appliedSettings.interface.theme);
+
+      // Language preference must be valid
+      expect(['en', 'es', 'fr', 'de', 'it', 'pt']).toContain(persistenceSystem.preferences.language);
+      expect(['en', 'es', 'fr', 'de', 'it', 'pt']).toContain(persistenceSystem.appliedSettings.interface.language);
+
+      // Currency preference must be valid
+      expect(['USD', 'EUR', 'GBP', 'CAD', 'JPY', 'AUD']).toContain(persistenceSystem.preferences.currency);
+      expect(['USD', 'EUR', 'GBP', 'CAD', 'JPY', 'AUD']).toContain(persistenceSystem.appliedSettings.interface.currency);
+
+      // Notifications preference must be boolean
+      expect(typeof persistenceSystem.preferences.notifications).toBe('boolean');
+      expect(typeof persistenceSystem.appliedSettings.interface.notifications).toBe('boolean');
+
+      // Price range must be valid
+      expect(persistenceSystem.preferences.priceRange.min).toBeLessThanOrEqual(persistenceSystem.preferences.priceRange.max);
+      expect(persistenceSystem.preferences.priceRange.min).toBeGreaterThanOrEqual(0);
+
+      // Layout preference must be valid
+      expect(['grid', 'list', 'compact']).toContain(persistenceSystem.preferences.layout);
+
+      // Items per page must be valid
+      expect([12, 24, 48, 96]).toContain(persistenceSystem.preferences.itemsPerPage);
+
+      // Categories and brands must be arrays
+      expect(Array.isArray(persistenceSystem.preferences.categories)).toBe(true);
+      expect(Array.isArray(persistenceSystem.preferences.brands)).toBe(true);
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should handle preference migration between anonymous and logged-in states', () => {
+    fc.assert(fc.property(preferenceArb, (preferences) => {
+      // Start as anonymous user
+      const anonymousSession = { isLoggedIn: false, userId: null, authToken: null, sessionTimestamp: Date.now() };
+      const anonymousSystem = createPreferencePersistenceSystem(preferences, anonymousSession);
+
+      // Migrate to logged-in user
+      const loggedInSession = { isLoggedIn: true, userId: 456, authToken: 'newtoken456', sessionTimestamp: Date.now() };
+      const loggedInSystem = createPreferencePersistenceSystem(preferences, loggedInSession);
+
+      // Preferences should be preserved during migration
+      expect(loggedInSystem.preferences).toEqual(anonymousSystem.preferences);
+      expect(loggedInSystem.appliedSettings.interface).toEqual(anonymousSystem.appliedSettings.interface);
+
+      // Storage mechanism should change appropriately
+      expect(anonymousSystem.persistence.localStorage.data).toBeTruthy();
+      expect(anonymousSystem.persistence.apiStorage.endpoint).toBeNull();
+      
+      expect(loggedInSystem.persistence.apiStorage.endpoint).toBeTruthy();
+      expect(loggedInSystem.persistence.localStorage.data).toBeNull();
+
+      // Both systems should maintain persistence integrity
+      expect(anonymousSystem.savedToStorage).toBe(true);
+      expect(loggedInSystem.savedToStorage).toBe(true);
+
+      return true;
+    }), { numRuns: 30 });
+  });
+
+  it('should preserve complex preference structures during persistence', () => {
+    fc.assert(fc.property(preferenceArb, sessionArb, (preferences, session) => {
+      const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+      // Complex nested structures should be preserved
+      expect(persistenceSystem.appliedSettings.filters.priceRange).toEqual(preferences.priceRange);
+      expect(persistenceSystem.appliedSettings.filters.priceRange.min).toBe(preferences.priceRange.min);
+      expect(persistenceSystem.appliedSettings.filters.priceRange.max).toBe(preferences.priceRange.max);
+
+      // Arrays should be preserved with correct order and content
+      expect(persistenceSystem.appliedSettings.filters.categories).toEqual(preferences.categories);
+      expect(persistenceSystem.appliedSettings.filters.brands).toEqual(preferences.brands);
+
+      // Array lengths should match
+      expect(persistenceSystem.appliedSettings.filters.categories.length).toBe(preferences.categories.length);
+      expect(persistenceSystem.appliedSettings.filters.brands.length).toBe(preferences.brands.length);
+
+      // Individual array elements should be preserved
+      preferences.categories.forEach((category, index) => {
+        expect(persistenceSystem.appliedSettings.filters.categories[index]).toBe(category);
+      });
+
+      preferences.brands.forEach((brand, index) => {
+        expect(persistenceSystem.appliedSettings.filters.brands[index]).toBe(brand);
+      });
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain preference persistence timestamps and metadata', () => {
+    fc.assert(fc.property(preferenceArb, sessionArb, (preferences, session) => {
+      const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+      // Timestamp should be recent and valid
+      expect(persistenceSystem.lastSyncTimestamp).toBeGreaterThan(Date.now() - 1000); // Within last second
+      expect(persistenceSystem.lastSyncTimestamp).toBeLessThanOrEqual(Date.now());
+
+      // Storage key should be appropriate for session type
+      if (session.isLoggedIn) {
+        expect(persistenceSystem.storageKey).toBe(`user_preferences_${session.userId}`);
+      } else {
+        expect(persistenceSystem.storageKey).toBe('anonymous_preferences');
+      }
+
+      // Persistence flags should indicate successful operations
+      expect(persistenceSystem.loadedFromStorage).toBe(true);
+      expect(persistenceSystem.savedToStorage).toBe(true);
+
+      // Session data should be preserved
+      expect(persistenceSystem.session).toEqual(session);
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should handle preference defaults and fallbacks during persistence', () => {
+    fc.assert(fc.property(sessionArb, (session) => {
+      // Test with minimal/default preferences
+      const defaultPreferences = {
+        theme: 'light',
+        language: 'en',
+        currency: 'USD',
+        notifications: true,
+        categories: [],
+        priceRange: { min: 0, max: 1000 },
+        brands: [],
+        layout: 'grid',
+        itemsPerPage: 24
+      };
+
+      const persistenceSystem = createPreferencePersistenceSystem(defaultPreferences, session);
+
+      // Default preferences should be properly applied
+      expect(persistenceSystem.appliedSettings.interface.theme).toBe('light');
+      expect(persistenceSystem.appliedSettings.interface.language).toBe('en');
+      expect(persistenceSystem.appliedSettings.interface.currency).toBe('USD');
+      expect(persistenceSystem.appliedSettings.interface.notifications).toBe(true);
+
+      // Empty arrays should be handled correctly
+      expect(persistenceSystem.appliedSettings.filters.categories).toEqual([]);
+      expect(persistenceSystem.appliedSettings.filters.brands).toEqual([]);
+
+      // Default price range should be valid
+      expect(persistenceSystem.appliedSettings.filters.priceRange.min).toBe(0);
+      expect(persistenceSystem.appliedSettings.filters.priceRange.max).toBe(1000);
+
+      // Persistence should still work with defaults
+      expect(persistenceSystem.loadedFromStorage).toBe(true);
+      expect(persistenceSystem.savedToStorage).toBe(true);
+
+      return true;
+    }), { numRuns: 30 });
+  });
+});

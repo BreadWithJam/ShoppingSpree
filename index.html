@@ -32,6 +32,32 @@
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body>
+  <!-- Progressive Enhancement Detection -->
+  <script>
+    // Add JavaScript-enabled class immediately to prevent FOUC
+    document.documentElement.classList.add('js-enabled');
+    
+    // Feature detection for modern CSS features
+    const features = {
+      grid: CSS.supports('display', 'grid'),
+      flexbox: CSS.supports('display', 'flex'),
+      customProperties: CSS.supports('--custom', 'property'),
+      clamp: CSS.supports('font-size', 'clamp(1rem, 2vw, 2rem)'),
+      aspectRatio: CSS.supports('aspect-ratio', '1/1'),
+      containerQueries: CSS.supports('container-type', 'inline-size')
+    };
+    
+    // Add feature classes to document
+    Object.entries(features).forEach(([feature, supported]) => {
+      document.documentElement.classList.add(
+        supported ? `supports-${feature}` : `no-${feature}`
+      );
+    });
+    
+    // Store feature support for JavaScript modules
+    window.CSS_FEATURES = features;
+  </script>
+
   <!-- Skip to main content link for accessibility -->
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
