@@ -1668,6 +1668,43 @@ label {
   border-bottom: none;
 }
 
+.search-suggestion__text {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.search-suggestion__category {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface-alt);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+}
+
+.search-suggestion__type {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.search-highlight {
+  background: #fff3cd;
+  color: #856404;
+  padding: 0.1em 0.2em;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.search-loading {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* Product grid keyboard navigation */
 .product-grid {
   /* Enable keyboard navigation within grid */
