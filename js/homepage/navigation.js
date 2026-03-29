@@ -49,6 +49,55 @@ export class NavigationManager extends BaseModule {
 
     // Handle window resize
     this.addEventListener(window, 'resize', this.throttle(this.handleResize, 250));
+
+    // Setup arrow key navigation for menu items
+    this.setupArrowKeyNavigation();
+  }
+
+  /**
+   * Setup arrow key navigation for menu items
+   */
+  setupArrowKeyNavigation() {
+    const navMenu = this.getElement('navMenu');
+    const navLinks = this.getElement('navLinks');
+    
+    if (!navMenu || !navLinks.length) return;
+
+    let currentIndex = 0;
+
+    navMenu.addEventListener('keydown', (event) => {
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      switch (event.key) {
+        case 'ArrowDown':
+        case 'ArrowRight':
+          currentIndex = (currentIndex + 1) % navLinks.length;
+          break;
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          currentIndex = (currentIndex - 1 + navLinks.length) % navLinks.length;
+          break;
+        case 'Home':
+          currentIndex = 0;
+          break;
+        case 'End':
+          currentIndex = navLinks.length - 1;
+          break;
+      }
+
+      navLinks[currentIndex].focus();
+    });
+
+    // Update current index when focus changes
+    navLinks.forEach((link, index) => {
+      link.addEventListener('focus', () => {
+        currentIndex = index;
+      });
+    });
   }
 
   /**
