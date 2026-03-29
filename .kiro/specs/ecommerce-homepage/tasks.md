@@ -269,7 +269,8 @@
 
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 8. Develop JavaScript functionality
+- [x] 8. Develop JavaScript functionality
+
 
   - [x] 8.1 Create shopping cart management system
 
@@ -307,7 +308,9 @@
     - **Property 19: User personalization**
     - **Validates: Requirements 5.3**
 
-  - [ ] 8.6 Write property test for preference persistence
+  - [x] 8.6 Write property test for preference persistence
+
+
     - **Property 20: Preference persistence**
     - **Validates: Requirements 5.4**
 

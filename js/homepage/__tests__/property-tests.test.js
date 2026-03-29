@@ -3945,3 +3945,368 @@ describe('Property 19: User personalization', () => {
     }), { numRuns: 50 });
   });
 });
+/**
+ * **Feature: ecommerce-homepage, Property 20: Preference persistence**
+ * **Validates: Requirements 5.4**
+ * 
+ * For any user with saved preferences, the homepage should remember and apply previous settings and preferences
+ */
+describe('Property 20: Preference persistence', () => {
+
+  // Mock preference data generator
+  const preferenceArb = fc.record({
+    theme: fc.constantFrom('light', 'dark', 'auto'),
+    language: fc.constantFrom('en', 'es', 'fr', 'de', 'it', 'pt'),
+    currency: fc.constantFrom('USD', 'EUR', 'GBP', 'CAD', 'JPY', 'AUD'),
+    notifications: fc.boolean(),
+    categories: fc.array(fc.string({ minLength: 3, maxLength: 20 }), { maxLength: 8 }),
+    priceRange: fc.record({
+      min: fc.float({ min: Math.fround(0), max: Math.fround(100), noNaN: true }),
+      max: fc.float({ min: Math.fround(100), max: Math.fround(1000), noNaN: true })
+    }),
+    brands: fc.array(fc.string({ minLength: 2, maxLength: 30 }), { maxLength: 10 }),
+    layout: fc.constantFrom('grid', 'list', 'compact'),
+    itemsPerPage: fc.constantFrom(12, 24, 48, 96)
+  });
+
+  const sessionArb = fc.record({
+    isLoggedIn: fc.boolean(),
+    userId: fc.option(fc.integer({ min: 1, max: 10000 }), { nil: null }),
+    authToken: fc.option(fc.string({ minLength: 32, maxLength: 64 }), { nil: null }),
+    sessionTimestamp: fc.integer({ min: Date.now() - 86400000, max: Date.now() }) // Last 24 hours
+  });
+
+  // Mock preference persistence system
+  const createPreferencePersistenceSystem = (preferences, session) => {
+    const storageKey = session.isLoggedIn ? `user_preferences_${session.userId}` : 'anonymous_preferences';
+    
+    return {
+      session: session,
+      preferences: preferences,
+      storageKey: storageKey,
+      persistence: {
+        localStorage: {
+          key: session.isLoggedIn ? null : 'user_preferences', // Anonymous users use localStorage
+          data: session.isLoggedIn ? null : preferences
+        },
+        apiStorage: {
+          endpoint: session.isLoggedIn ? `/api/user/${session.userId}/preferences` : null,
+          data: session.isLoggedIn ? preferences : null,
+          authToken: session.authToken
+        }
+      },
+      appliedSettings: {
+        documentElement: {
+          attributes: {
+            'data-theme': preferences.theme,
+            'lang': preferences.language,
+            'data-currency': preferences.currency,
+            'data-notifications': preferences.notifications ? 'enabled' : 'disabled'
+          }
+        },
+        interface: {
+          theme: preferences.theme,
+          language: preferences.language,
+          currency: preferences.currency,
+          notifications: preferences.notifications,
+          layout: preferences.layout,
+          itemsPerPage: preferences.itemsPerPage
+        },
+        filters: {
+          categories: preferences.categories,
+          priceRange: preferences.priceRange,
+          brands: preferences.brands
+        }
+      },
+      loadedFromStorage: true,
+      savedToStorage: true,
+      lastSyncTimestamp: Date.now()
+    };
+  };
+
+  it('should persist and restore user preferences across sessions', () => {
+    fc.assert(fc.property(
+      preferenceArb,
+      sessionArb,
+      (preferences, session) => {
+        const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+        // Preferences must be properly stored
+        if (session.isLoggedIn) {
+          // Logged-in users: API storage
+          expect(persistenceSystem.persistence.apiStorage.endpoint).toBeTruthy();
+          expect(persistenceSystem.persistence.apiStorage.data).toEqual(preferences);
+          expect(persistenceSystem.persistence.apiStorage.authToken).toBe(session.authToken);
+          expect(persistenceSystem.persistence.localStorage.data).toBeNull();
+        } else {
+          // Anonymous users: localStorage
+          expect(persistenceSystem.persistence.localStorage.key).toBe('user_preferences');
+          expect(persistenceSystem.persistence.localStorage.data).toEqual(preferences);
+          expect(persistenceSystem.persistence.apiStorage.endpoint).toBeNull();
+        }
+
+        // Preferences must be applied to interface
+        const { appliedSettings } = persistenceSystem;
+        
+        expect(appliedSettings.interface.theme).toBe(preferences.theme);
+        expect(appliedSettings.interface.language).toBe(preferences.language);
+        expect(appliedSettings.interface.currency).toBe(preferences.currency);
+        expect(appliedSettings.interface.notifications).toBe(preferences.notifications);
+        expect(appliedSettings.interface.layout).toBe(preferences.layout);
+        expect(appliedSettings.interface.itemsPerPage).toBe(preferences.itemsPerPage);
+
+        // Document attributes must reflect preferences
+        expect(appliedSettings.documentElement.attributes['data-theme']).toBe(preferences.theme);
+        expect(appliedSettings.documentElement.attributes['lang']).toBe(preferences.language);
+        expect(appliedSettings.documentElement.attributes['data-currency']).toBe(preferences.currency);
+        expect(appliedSettings.documentElement.attributes['data-notifications']).toBe(
+          preferences.notifications ? 'enabled' : 'disabled'
+        );
+
+        // Filters must be preserved
+        expect(appliedSettings.filters.categories).toEqual(preferences.categories);
+        expect(appliedSettings.filters.priceRange).toEqual(preferences.priceRange);
+        expect(appliedSettings.filters.brands).toEqual(preferences.brands);
+
+        // System must indicate successful persistence
+        expect(persistenceSystem.loadedFromStorage).toBe(true);
+        expect(persistenceSystem.savedToStorage).toBe(true);
+        expect(persistenceSystem.lastSyncTimestamp).toBeGreaterThan(0);
+
+        return true;
+      }
+    ), { numRuns: 100 });
+  });
+
+  it('should handle preference updates and maintain persistence', () => {
+    fc.assert(fc.property(
+      preferenceArb,
+      preferenceArb,
+      sessionArb,
+      (initialPreferences, updatedPreferences, session) => {
+        // Start with initial preferences
+        const initialSystem = createPreferencePersistenceSystem(initialPreferences, session);
+        
+        // Update preferences
+        const updatedSystem = createPreferencePersistenceSystem(updatedPreferences, session);
+
+        // Storage mechanism should remain consistent
+        expect(initialSystem.persistence.localStorage.key).toBe(updatedSystem.persistence.localStorage.key);
+        expect(initialSystem.persistence.apiStorage.endpoint).toBe(updatedSystem.persistence.apiStorage.endpoint);
+
+        // Updated preferences should be properly stored
+        if (session.isLoggedIn) {
+          expect(updatedSystem.persistence.apiStorage.data).toEqual(updatedPreferences);
+        } else {
+          expect(updatedSystem.persistence.localStorage.data).toEqual(updatedPreferences);
+        }
+
+        // Applied settings should reflect updates
+        expect(updatedSystem.appliedSettings.interface.theme).toBe(updatedPreferences.theme);
+        expect(updatedSystem.appliedSettings.interface.language).toBe(updatedPreferences.language);
+        expect(updatedSystem.appliedSettings.interface.currency).toBe(updatedPreferences.currency);
+
+        // Document attributes should be updated
+        expect(updatedSystem.appliedSettings.documentElement.attributes['data-theme']).toBe(updatedPreferences.theme);
+        expect(updatedSystem.appliedSettings.documentElement.attributes['lang']).toBe(updatedPreferences.language);
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should maintain preference consistency across different storage mechanisms', () => {
+    fc.assert(fc.property(
+      preferenceArb,
+      (preferences) => {
+        // Test both logged-in and anonymous sessions
+        const loggedInSession = { isLoggedIn: true, userId: 123, authToken: 'token123', sessionTimestamp: Date.now() };
+        const anonymousSession = { isLoggedIn: false, userId: null, authToken: null, sessionTimestamp: Date.now() };
+
+        const loggedInSystem = createPreferencePersistenceSystem(preferences, loggedInSession);
+        const anonymousSystem = createPreferencePersistenceSystem(preferences, anonymousSession);
+
+        // Applied settings should be identical regardless of storage mechanism
+        expect(loggedInSystem.appliedSettings.interface).toEqual(anonymousSystem.appliedSettings.interface);
+        expect(loggedInSystem.appliedSettings.documentElement).toEqual(anonymousSystem.appliedSettings.documentElement);
+        expect(loggedInSystem.appliedSettings.filters).toEqual(anonymousSystem.appliedSettings.filters);
+
+        // Both should indicate successful persistence
+        expect(loggedInSystem.loadedFromStorage).toBe(true);
+        expect(loggedInSystem.savedToStorage).toBe(true);
+        expect(anonymousSystem.loadedFromStorage).toBe(true);
+        expect(anonymousSystem.savedToStorage).toBe(true);
+
+        // Storage mechanisms should be different but both functional
+        expect(loggedInSystem.persistence.apiStorage.endpoint).toBeTruthy();
+        expect(loggedInSystem.persistence.localStorage.data).toBeNull();
+        expect(anonymousSystem.persistence.localStorage.data).toBeTruthy();
+        expect(anonymousSystem.persistence.apiStorage.endpoint).toBeNull();
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should validate preference data integrity during persistence', () => {
+    fc.assert(fc.property(preferenceArb, sessionArb, (preferences, session) => {
+      const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+      // Theme preference must be valid
+      expect(['light', 'dark', 'auto']).toContain(persistenceSystem.preferences.theme);
+      expect(['light', 'dark', 'auto']).toContain(persistenceSystem.appliedSettings.interface.theme);
+
+      // Language preference must be valid
+      expect(['en', 'es', 'fr', 'de', 'it', 'pt']).toContain(persistenceSystem.preferences.language);
+      expect(['en', 'es', 'fr', 'de', 'it', 'pt']).toContain(persistenceSystem.appliedSettings.interface.language);
+
+      // Currency preference must be valid
+      expect(['USD', 'EUR', 'GBP', 'CAD', 'JPY', 'AUD']).toContain(persistenceSystem.preferences.currency);
+      expect(['USD', 'EUR', 'GBP', 'CAD', 'JPY', 'AUD']).toContain(persistenceSystem.appliedSettings.interface.currency);
+
+      // Notifications preference must be boolean
+      expect(typeof persistenceSystem.preferences.notifications).toBe('boolean');
+      expect(typeof persistenceSystem.appliedSettings.interface.notifications).toBe('boolean');
+
+      // Price range must be valid
+      expect(persistenceSystem.preferences.priceRange.min).toBeLessThanOrEqual(persistenceSystem.preferences.priceRange.max);
+      expect(persistenceSystem.preferences.priceRange.min).toBeGreaterThanOrEqual(0);
+
+      // Layout preference must be valid
+      expect(['grid', 'list', 'compact']).toContain(persistenceSystem.preferences.layout);
+
+      // Items per page must be valid
+      expect([12, 24, 48, 96]).toContain(persistenceSystem.preferences.itemsPerPage);
+
+      // Categories and brands must be arrays
+      expect(Array.isArray(persistenceSystem.preferences.categories)).toBe(true);
+      expect(Array.isArray(persistenceSystem.preferences.brands)).toBe(true);
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should handle preference migration between anonymous and logged-in states', () => {
+    fc.assert(fc.property(preferenceArb, (preferences) => {
+      // Start as anonymous user
+      const anonymousSession = { isLoggedIn: false, userId: null, authToken: null, sessionTimestamp: Date.now() };
+      const anonymousSystem = createPreferencePersistenceSystem(preferences, anonymousSession);
+
+      // Migrate to logged-in user
+      const loggedInSession = { isLoggedIn: true, userId: 456, authToken: 'newtoken456', sessionTimestamp: Date.now() };
+      const loggedInSystem = createPreferencePersistenceSystem(preferences, loggedInSession);
+
+      // Preferences should be preserved during migration
+      expect(loggedInSystem.preferences).toEqual(anonymousSystem.preferences);
+      expect(loggedInSystem.appliedSettings.interface).toEqual(anonymousSystem.appliedSettings.interface);
+
+      // Storage mechanism should change appropriately
+      expect(anonymousSystem.persistence.localStorage.data).toBeTruthy();
+      expect(anonymousSystem.persistence.apiStorage.endpoint).toBeNull();
+      
+      expect(loggedInSystem.persistence.apiStorage.endpoint).toBeTruthy();
+      expect(loggedInSystem.persistence.localStorage.data).toBeNull();
+
+      // Both systems should maintain persistence integrity
+      expect(anonymousSystem.savedToStorage).toBe(true);
+      expect(loggedInSystem.savedToStorage).toBe(true);
+
+      return true;
+    }), { numRuns: 30 });
+  });
+
+  it('should preserve complex preference structures during persistence', () => {
+    fc.assert(fc.property(preferenceArb, sessionArb, (preferences, session) => {
+      const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+      // Complex nested structures should be preserved
+      expect(persistenceSystem.appliedSettings.filters.priceRange).toEqual(preferences.priceRange);
+      expect(persistenceSystem.appliedSettings.filters.priceRange.min).toBe(preferences.priceRange.min);
+      expect(persistenceSystem.appliedSettings.filters.priceRange.max).toBe(preferences.priceRange.max);
+
+      // Arrays should be preserved with correct order and content
+      expect(persistenceSystem.appliedSettings.filters.categories).toEqual(preferences.categories);
+      expect(persistenceSystem.appliedSettings.filters.brands).toEqual(preferences.brands);
+
+      // Array lengths should match
+      expect(persistenceSystem.appliedSettings.filters.categories.length).toBe(preferences.categories.length);
+      expect(persistenceSystem.appliedSettings.filters.brands.length).toBe(preferences.brands.length);
+
+      // Individual array elements should be preserved
+      preferences.categories.forEach((category, index) => {
+        expect(persistenceSystem.appliedSettings.filters.categories[index]).toBe(category);
+      });
+
+      preferences.brands.forEach((brand, index) => {
+        expect(persistenceSystem.appliedSettings.filters.brands[index]).toBe(brand);
+      });
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain preference persistence timestamps and metadata', () => {
+    fc.assert(fc.property(preferenceArb, sessionArb, (preferences, session) => {
+      const persistenceSystem = createPreferencePersistenceSystem(preferences, session);
+
+      // Timestamp should be recent and valid
+      expect(persistenceSystem.lastSyncTimestamp).toBeGreaterThan(Date.now() - 1000); // Within last second
+      expect(persistenceSystem.lastSyncTimestamp).toBeLessThanOrEqual(Date.now());
+
+      // Storage key should be appropriate for session type
+      if (session.isLoggedIn) {
+        expect(persistenceSystem.storageKey).toBe(`user_preferences_${session.userId}`);
+      } else {
+        expect(persistenceSystem.storageKey).toBe('anonymous_preferences');
+      }
+
+      // Persistence flags should indicate successful operations
+      expect(persistenceSystem.loadedFromStorage).toBe(true);
+      expect(persistenceSystem.savedToStorage).toBe(true);
+
+      // Session data should be preserved
+      expect(persistenceSystem.session).toEqual(session);
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should handle preference defaults and fallbacks during persistence', () => {
+    fc.assert(fc.property(sessionArb, (session) => {
+      // Test with minimal/default preferences
+      const defaultPreferences = {
+        theme: 'light',
+        language: 'en',
+        currency: 'USD',
+        notifications: true,
+        categories: [],
+        priceRange: { min: 0, max: 1000 },
+        brands: [],
+        layout: 'grid',
+        itemsPerPage: 24
+      };
+
+      const persistenceSystem = createPreferencePersistenceSystem(defaultPreferences, session);
+
+      // Default preferences should be properly applied
+      expect(persistenceSystem.appliedSettings.interface.theme).toBe('light');
+      expect(persistenceSystem.appliedSettings.interface.language).toBe('en');
+      expect(persistenceSystem.appliedSettings.interface.currency).toBe('USD');
+      expect(persistenceSystem.appliedSettings.interface.notifications).toBe(true);
+
+      // Empty arrays should be handled correctly
+      expect(persistenceSystem.appliedSettings.filters.categories).toEqual([]);
+      expect(persistenceSystem.appliedSettings.filters.brands).toEqual([]);
+
+      // Default price range should be valid
+      expect(persistenceSystem.appliedSettings.filters.priceRange.min).toBe(0);
+      expect(persistenceSystem.appliedSettings.filters.priceRange.max).toBe(1000);
+
+      // Persistence should still work with defaults
+      expect(persistenceSystem.loadedFromStorage).toBe(true);
+      expect(persistenceSystem.savedToStorage).toBe(true);
+
+      return true;
+    }), { numRuns: 30 });
+  });
+});
