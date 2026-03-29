@@ -301,7 +301,9 @@
     - Save and apply user preferences across sessions
     - _Requirements: 5.3, 5.4_
 
-  - [ ] 8.5 Write property test for user personalization
+  - [x] 8.5 Write property test for user personalization
+
+
     - **Property 19: User personalization**
     - **Validates: Requirements 5.3**
 

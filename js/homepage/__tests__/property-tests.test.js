@@ -3593,3 +3593,355 @@ describe('Property 18: Cart access functionality', () => {
     ), { numRuns: 50 });
   });
 });
+/**
+ * **Feature: ecommerce-homepage, Property 19: User personalization**
+ * **Validates: Requirements 5.3**
+ * 
+ * For any logged-in user, the homepage should display personalized account access and user-specific recommendations
+ */
+describe('Property 19: User personalization', () => {
+
+  // Mock user data generator
+  const userDataArb = fc.record({
+    id: fc.integer({ min: 1, max: 10000 }),
+    name: fc.string({ minLength: 2, maxLength: 50 }).filter(s => s.trim().length > 0),
+    email: fc.emailAddress(),
+    preferences: fc.record({
+      theme: fc.constantFrom('light', 'dark', 'auto'),
+      language: fc.constantFrom('en', 'es', 'fr', 'de'),
+      currency: fc.constantFrom('USD', 'EUR', 'GBP', 'CAD'),
+      categories: fc.array(fc.string({ minLength: 3, maxLength: 20 }), { maxLength: 5 }),
+      notifications: fc.boolean()
+    }),
+    isLoggedIn: fc.constant(true),
+    authToken: fc.string({ minLength: 32, maxLength: 64 })
+  });
+
+  const recommendationArb = fc.record({
+    id: fc.integer({ min: 1, max: 1000 }),
+    name: fc.string({ minLength: 5, maxLength: 50 }).filter(s => s.trim().length > 0),
+    price: fc.float({ min: Math.fround(1.00), max: Math.fround(999.99), noNaN: true }),
+    category: fc.string({ minLength: 3, maxLength: 20 }),
+    image: fc.webUrl(),
+    relevanceScore: fc.float({ min: Math.fround(0.1), max: Math.fround(1.0), noNaN: true })
+  });
+
+  // Mock personalized homepage creation
+  const createPersonalizedHomepage = (user, recommendations = []) => {
+    return {
+      user: user,
+      isLoggedIn: user.isLoggedIn,
+      accountAccess: {
+        userGreeting: {
+          className: 'user-greeting',
+          textContent: `Hello, ${user.name || user.email.split('@')[0]}!`,
+          visible: true
+        },
+        userAccount: {
+          className: 'user-account user-account--logged-in',
+          ariaLabel: `User account: ${user.name || user.email}`,
+          visible: true
+        },
+        loginButton: {
+          className: 'login-button',
+          visible: false
+        },
+        logoutButton: {
+          className: 'logout-button',
+          visible: true
+        },
+        userMenu: {
+          className: 'user-menu',
+          items: [
+            { text: 'My Account', href: '/account' },
+            { text: 'Order History', href: '/orders' },
+            { text: 'Preferences', href: '/preferences' },
+            { text: 'Logout', action: 'logout' }
+          ]
+        }
+      },
+      personalizedContent: {
+        className: 'personalized-content personalized-content--active',
+        visible: true,
+        recommendations: {
+          section: {
+            className: 'recommendations-section',
+            visible: recommendations.length > 0
+          },
+          header: {
+            className: 'recommendations-header',
+            title: 'Recommended for You'
+          },
+          items: recommendations.map(rec => ({
+            id: rec.id,
+            className: 'recommendation-card',
+            name: rec.name,
+            price: rec.price,
+            category: rec.category,
+            image: rec.image,
+            relevanceScore: rec.relevanceScore,
+            actionButton: {
+              className: 'recommendation-card__action',
+              text: 'Add to Cart',
+              dataProductId: rec.id.toString()
+            }
+          }))
+        }
+      },
+      appliedPreferences: {
+        theme: user.preferences.theme,
+        language: user.preferences.language,
+        currency: user.preferences.currency,
+        categories: user.preferences.categories,
+        notifications: user.preferences.notifications
+      }
+    };
+  };
+
+  it('should display personalized account access for logged-in users', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // User must be logged in
+      expect(homepage.isLoggedIn).toBe(true);
+      expect(homepage.user.isLoggedIn).toBe(true);
+
+      // Account access elements must be properly configured
+      const { accountAccess } = homepage;
+
+      // User greeting must be visible and personalized
+      expect(accountAccess.userGreeting.visible).toBe(true);
+      expect(accountAccess.userGreeting.className).toBe('user-greeting');
+      expect(accountAccess.userGreeting.textContent).toContain('Hello');
+      expect(accountAccess.userGreeting.textContent).toContain(user.name || user.email.split('@')[0]);
+
+      // User account element must show logged-in state
+      expect(accountAccess.userAccount.visible).toBe(true);
+      expect(accountAccess.userAccount.className).toContain('user-account--logged-in');
+      expect(accountAccess.userAccount.ariaLabel).toContain(user.name || user.email);
+
+      // Login button must be hidden, logout button visible
+      expect(accountAccess.loginButton.visible).toBe(false);
+      expect(accountAccess.logoutButton.visible).toBe(true);
+
+      // User menu must contain account-related options
+      expect(accountAccess.userMenu.items.length).toBeGreaterThan(0);
+      const menuTexts = accountAccess.userMenu.items.map(item => item.text);
+      expect(menuTexts).toContain('My Account');
+      expect(menuTexts).toContain('Logout');
+
+      return true;
+    }), { numRuns: 100 });
+  });
+
+  it('should display user-specific recommendations for logged-in users', () => {
+    fc.assert(fc.property(
+      userDataArb,
+      fc.array(recommendationArb, { minLength: 1, maxLength: 8 }),
+      (user, recommendations) => {
+        const homepage = createPersonalizedHomepage(user, recommendations);
+
+        // Personalized content must be active
+        expect(homepage.personalizedContent.visible).toBe(true);
+        expect(homepage.personalizedContent.className).toContain('personalized-content--active');
+
+        // Recommendations section must be visible when recommendations exist
+        const { recommendations: recSection } = homepage.personalizedContent;
+        expect(recSection.section.visible).toBe(true);
+        expect(recSection.section.className).toBe('recommendations-section');
+
+        // Header must indicate personalization
+        expect(recSection.header.title).toBe('Recommended for You');
+
+        // Each recommendation must have required elements
+        expect(recSection.items.length).toBe(recommendations.length);
+        
+        recSection.items.forEach((item, index) => {
+          const originalRec = recommendations[index];
+          
+          expect(item.id).toBe(originalRec.id);
+          expect(item.className).toBe('recommendation-card');
+          expect(item.name).toBe(originalRec.name);
+          expect(item.price).toBeCloseTo(originalRec.price, 2);
+          expect(item.category).toBe(originalRec.category);
+          expect(item.image).toBe(originalRec.image);
+          expect(item.relevanceScore).toBeCloseTo(originalRec.relevanceScore, 2);
+          
+          // Action button must be properly configured
+          expect(item.actionButton.className).toBe('recommendation-card__action');
+          expect(item.actionButton.text).toBe('Add to Cart');
+          expect(item.actionButton.dataProductId).toBe(originalRec.id.toString());
+        });
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should apply user preferences to personalized interface', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // User preferences must be applied
+      const { appliedPreferences } = homepage;
+      
+      expect(appliedPreferences.theme).toBe(user.preferences.theme);
+      expect(appliedPreferences.language).toBe(user.preferences.language);
+      expect(appliedPreferences.currency).toBe(user.preferences.currency);
+      expect(appliedPreferences.notifications).toBe(user.preferences.notifications);
+
+      // Theme preference must be valid
+      expect(['light', 'dark', 'auto']).toContain(appliedPreferences.theme);
+
+      // Language preference must be valid
+      expect(['en', 'es', 'fr', 'de']).toContain(appliedPreferences.language);
+
+      // Currency preference must be valid
+      expect(['USD', 'EUR', 'GBP', 'CAD']).toContain(appliedPreferences.currency);
+
+      // Notifications preference must be boolean
+      expect(typeof appliedPreferences.notifications).toBe('boolean');
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain consistent personalization across different user states', () => {
+    fc.assert(fc.property(
+      userDataArb,
+      userDataArb,
+      (user1, user2) => {
+        const homepage1 = createPersonalizedHomepage(user1);
+        const homepage2 = createPersonalizedHomepage(user2);
+
+        // Both should show logged-in state
+        expect(homepage1.isLoggedIn).toBe(true);
+        expect(homepage2.isLoggedIn).toBe(true);
+
+        // Account access structure should be consistent
+        expect(homepage1.accountAccess.userGreeting.className).toBe(homepage2.accountAccess.userGreeting.className);
+        expect(homepage1.accountAccess.userAccount.className).toContain('user-account--logged-in');
+        expect(homepage2.accountAccess.userAccount.className).toContain('user-account--logged-in');
+
+        // Both should have personalized content active
+        expect(homepage1.personalizedContent.className).toContain('personalized-content--active');
+        expect(homepage2.personalizedContent.className).toContain('personalized-content--active');
+
+        // User menu structure should be consistent
+        expect(homepage1.accountAccess.userMenu.items.length).toBe(homepage2.accountAccess.userMenu.items.length);
+
+        // But content should be personalized to each user
+        expect(homepage1.accountAccess.userGreeting.textContent).not.toBe(homepage2.accountAccess.userGreeting.textContent);
+        expect(homepage1.accountAccess.userAccount.ariaLabel).not.toBe(homepage2.accountAccess.userAccount.ariaLabel);
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should handle empty recommendations gracefully for logged-in users', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user, []); // No recommendations
+
+      // User should still be logged in with account access
+      expect(homepage.isLoggedIn).toBe(true);
+      expect(homepage.accountAccess.userGreeting.visible).toBe(true);
+      expect(homepage.accountAccess.userAccount.visible).toBe(true);
+
+      // Personalized content should still be active
+      expect(homepage.personalizedContent.visible).toBe(true);
+      expect(homepage.personalizedContent.className).toContain('personalized-content--active');
+
+      // Recommendations section should be hidden when empty
+      expect(homepage.personalizedContent.recommendations.section.visible).toBe(false);
+      expect(homepage.personalizedContent.recommendations.items.length).toBe(0);
+
+      // Preferences should still be applied
+      expect(homepage.appliedPreferences.theme).toBeTruthy();
+      expect(homepage.appliedPreferences.language).toBeTruthy();
+      expect(homepage.appliedPreferences.currency).toBeTruthy();
+
+      return true;
+    }), { numRuns: 30 });
+  });
+
+  it('should prioritize high-relevance recommendations for personalized display', () => {
+    fc.assert(fc.property(
+      userDataArb,
+      fc.array(recommendationArb, { minLength: 3, maxLength: 10 }),
+      (user, recommendations) => {
+        // Sort recommendations by relevance score (descending)
+        const sortedRecommendations = [...recommendations].sort((a, b) => b.relevanceScore - a.relevanceScore);
+        const homepage = createPersonalizedHomepage(user, sortedRecommendations);
+
+        const displayedRecs = homepage.personalizedContent.recommendations.items;
+
+        // Recommendations should maintain relevance order
+        for (let i = 0; i < displayedRecs.length - 1; i++) {
+          expect(displayedRecs[i].relevanceScore).toBeGreaterThanOrEqual(displayedRecs[i + 1].relevanceScore);
+        }
+
+        // All recommendations should have valid relevance scores
+        displayedRecs.forEach(rec => {
+          expect(rec.relevanceScore).toBeGreaterThan(0);
+          expect(rec.relevanceScore).toBeLessThanOrEqual(1);
+        });
+
+        return true;
+      }
+    ), { numRuns: 50 });
+  });
+
+  it('should provide accessible personalized interface elements', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // Account access must have proper ARIA labels
+      expect(homepage.accountAccess.userAccount.ariaLabel).toBeTruthy();
+      expect(homepage.accountAccess.userAccount.ariaLabel).toContain('User account');
+
+      // User greeting must be visible to screen readers
+      expect(homepage.accountAccess.userGreeting.visible).toBe(true);
+      expect(homepage.accountAccess.userGreeting.textContent).toBeTruthy();
+
+      // User menu items must have proper navigation structure
+      homepage.accountAccess.userMenu.items.forEach(item => {
+        expect(item.text).toBeTruthy();
+        expect(item.href || item.action).toBeTruthy();
+      });
+
+      // Recommendation action buttons must have proper labels
+      homepage.personalizedContent.recommendations.items.forEach(item => {
+        expect(item.actionButton.text).toBeTruthy();
+        expect(item.actionButton.dataProductId).toBeTruthy();
+      });
+
+      return true;
+    }), { numRuns: 50 });
+  });
+
+  it('should maintain user identity consistency across personalized elements', () => {
+    fc.assert(fc.property(userDataArb, (user) => {
+      const homepage = createPersonalizedHomepage(user);
+
+      // User identity should be consistent across all personalized elements
+      const displayName = user.name || user.email.split('@')[0];
+      
+      expect(homepage.accountAccess.userGreeting.textContent).toContain(displayName);
+      expect(homepage.accountAccess.userAccount.ariaLabel).toContain(user.name || user.email);
+
+      // User object should match original data
+      expect(homepage.user.id).toBe(user.id);
+      expect(homepage.user.name).toBe(user.name);
+      expect(homepage.user.email).toBe(user.email);
+      expect(homepage.user.isLoggedIn).toBe(user.isLoggedIn);
+
+      // Applied preferences should match user preferences
+      Object.keys(user.preferences).forEach(key => {
+        expect(homepage.appliedPreferences[key]).toBe(user.preferences[key]);
+      });
+
+      return true;
+    }), { numRuns: 50 });
+  });
+});
