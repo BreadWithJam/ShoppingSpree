@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - ShoppingSpree</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .offline-container {
+      max-width: 500px;
+      width: 100%;
+    }
+    
+    .offline-icon {
+      font-size: 4rem;
+      margin-bottom: 2rem;
+      opacity: 0.8;
+    }
+    
+    .offline-title {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #e94560;
+    }
+    
+    .offline-message {
+      font-size: 1.2rem;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+      opacity: 0.9;
+    }
+    
+    .offline-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      align-items: center;
+    }
+    
+    .retry-button {
+      background: #e94560;
+      color: #ffffff;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      min-width: 200px;
+    }
+    
+    .retry-button:hover {
+      background: #d63851;
+      transform: translateY(-2px);
+    }
+    
+    .offline-features {
+      margin-top: 3rem;
+      text-align: left;
+    }
+    
+    .offline-features h3 {
+      font-size: 1.3rem;
+      margin-bottom: 1rem;
+      color: #e94560;
+    }
+    
+    .offline-features ul {
+      list-style: none;
+      padding: 0;
+    }
+    
+    .offline-features li {
+      padding: 0.5rem 0;
+      opacity: 0.8;
+    }
+    
+    .offline-features li::before {
+      content: "✓";
+      color: #e94560;
+      font-weight: bold;
+      margin-right: 0.5rem;
+    }
+    
+    .connection-status {
+      margin-top: 2rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      font-size: 0.9rem;
+    }
+    
+    .connection-status.online {
+      background: rgba(40, 167, 69, 0.2);
+      border: 1px solid #28a745;
+    }
+    
+    .connection-status.offline {
+      background: rgba(220, 53, 69, 0.2);
+      border: 1px solid #dc3545;
+    }
+    
+    @media (max-width: 768px) {
+      .offline-title {
+        font-size: 2rem;
+      }
+      
+      .offline-message {
+        font-size: 1rem;
+      }
+      
+      .offline-features {
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-container">
+    <div class="offline-icon">📱</div>
+    
+    <h1 class="offline-title">You're Offline</h1>
+    
+    <p class="offline-message">
+      Don't worry! You can still browse cached products and your cart will sync when you're back online.
+    </p>
+    
+    <div class="offline-actions">
+      <button class="retry-button" onclick="retryConnection()">
+        Try Again
+      </button>
+    </div>
+    
+    <div class="offline-features">
+      <h3>Available Offline:</h3>
+      <ul>
+        <li>Browse previously viewed products</li>
+        <li>View your shopping cart</li>
+        <li>Access cached pages</li>
+        <li>Your data will sync automatically</li>
+      </ul>
+    </div>
+    
+    <div class="connection-status offline" id="connectionStatus">
+      <strong>Status:</strong> <span id="statusText">Offline</span>
+    </div>
+  </div>
+
+  <script>
+    // Check connection status
+    function updateConnectionStatus() {
+      const statusElement = document.getElementById('connectionStatus');
+      const statusText = document.getElementById('statusText');
+      
+      if (navigator.onLine) {
+        statusElement.className = 'connection-status online';
+        statusText.textContent = 'Online - Syncing data...';
+        
+        // Auto-redirect when back online
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      } else {
+        statusElement.className = 'connection-status offline';
+        statusText.textContent = 'Offline';
+      }
+    }
+    
+    // Retry connection
+    function retryConnection() {
+      const button = document.querySelector('.retry-button');
+      button.textContent = 'Checking...';
+      button.disabled = true;
+      
+      // Check if we're back online
+      if (navigator.onLine) {
+        window.location.href = '/';
+      } else {
+        setTimeout(() => {
+          button.textContent = 'Try Again';
+          button.disabled = false;
+        }, 1000);
+      }
+    }
+    
+    // Listen for connection changes
+    window.addEventListener('online', updateConnectionStatus);
+    window.addEventListener('offline', updateConnectionStatus);
+    
+    // Initial status check
+    updateConnectionStatus();
+    
+    // Periodic connection check
+    setInterval(updateConnectionStatus, 5000);
+  </script>
+</body>
+</html>
