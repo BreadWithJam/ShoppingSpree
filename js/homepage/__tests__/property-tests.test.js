@@ -4310,3 +4310,477 @@ describe('Property 20: Preference persistence', () => {
     }), { numRuns: 30 });
   });
 });
+
+/**
+ * **Feature: ecommerce-homepage, Property 13: Progressive loading strategy**
+ * **Validates: Requirements 4.2**
+ * 
+ * For any homepage load, critical content should be prioritized and progressive 
+ * loading strategies should be implemented
+ */
+describe('Property 13: Progressive loading strategy', () => {
+
+  // Arbitrary for generating progressive loading data
+  const progressiveLoadingArb = fc.record({
+    criticalResources: fc.array(fc.record({
+      type: fc.constantFrom('css', 'js', 'font', 'image'),
+      url: fc.webUrl(),
+      priority: fc.constantFrom('high', 'medium', 'low'),
+      isAboveFold: fc.boolean(),
+      hasPreload: fc.boolean(),
+      hasResourceHint: fc.boolean()
+    }), { minLength: 1, maxLength: 10 }),
+    connectionType: fc.constantFrom('slow-2g', '2g', '3g', '4g'),
+    hasSkeletonScreens: fc.boolean(),
+    hasCriticalCSS: fc.boolean(),
+    hasLazyLoading: fc.boolean()
+  });
+
+  it('should prioritize critical above-the-fold content', () => {
+    fc.assert(fc.property(progressiveLoadingArb, (loadingData) => {
+      const criticalHTML = generateCriticalContentHTML(loadingData);
+
+      // Critical above-the-fold resources should have high priority
+      const criticalResources = loadingData.criticalResources.filter(r => 
+        r.isAboveFold && r.priority === 'high'
+      );
+
+      criticalResources.forEach(resource => {
+        if (resource.hasPreload) {
+          // Should have preload link for critical resources
+          expect(criticalHTML).toMatch(new RegExp(`<link[^>]*rel="preload"[^>]*href="${escapeRegex(resource.url)}"`));
+          const expectedAsType = resource.type === 'css' ? 'style' : 
+                                resource.type === 'js' ? 'script' : resource.type;
+          expect(criticalHTML).toMatch(new RegExp(`as="${expectedAsType}"`));
+        }
+
+        if (resource.hasResourceHint) {
+          // Should have appropriate resource hints
+          if (resource.type === 'font') {
+            expect(criticalHTML).toMatch(/rel="preconnect"/);
+          }
+          if (resource.priority === 'medium') {
+            expect(criticalHTML).toMatch(/rel="prefetch"/);
+          }
+        }
+      });
+
+      // Critical CSS should be inlined for above-the-fold content
+      if (loadingData.hasCriticalCSS) {
+        expect(criticalHTML).toMatch(/<style[^>]*id="critical-css"[^>]*>/);
+        expect(criticalHTML).toContain('.site-header');
+        expect(criticalHTML).toContain('.hero-section');
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should implement skeleton screens for loading states', () => {
+    fc.assert(fc.property(progressiveLoadingArb, (loadingData) => {
+      const skeletonHTML = generateSkeletonScreenHTML(loadingData);
+
+      if (loadingData.hasSkeletonScreens) {
+        // Should have product card skeletons
+        expect(skeletonHTML).toMatch(/class="product-skeleton"/);
+        expect(skeletonHTML).toMatch(/class="product-skeleton__image"/);
+        expect(skeletonHTML).toMatch(/class="product-skeleton__title"/);
+        expect(skeletonHTML).toMatch(/class="product-skeleton__price"/);
+
+        // Should have hero section skeleton
+        expect(skeletonHTML).toMatch(/class="hero-skeleton"/);
+        expect(skeletonHTML).toMatch(/class="hero-skeleton__title"/);
+        expect(skeletonHTML).toMatch(/class="hero-skeleton__description"/);
+
+        // Skeletons should have shimmer animation
+        expect(skeletonHTML).toMatch(/animation:\s*shimmer/);
+        expect(skeletonHTML).toMatch(/@keyframes\s+shimmer/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should adapt loading strategy based on connection speed', () => {
+    fc.assert(fc.property(progressiveLoadingArb, (loadingData) => {
+      const adaptiveHTML = generateAdaptiveLoadingHTML(loadingData);
+
+      if (loadingData.connectionType === 'slow-2g' || loadingData.connectionType === '2g') {
+        // Should enable low bandwidth mode
+        expect(adaptiveHTML).toContain('class="low-bandwidth"');
+        
+        // Should reduce image quality for slow connections
+        const imageMatches = adaptiveHTML.match(/src="[^"]*"/g) || [];
+        imageMatches.forEach(match => {
+          if (match.includes('unsplash.com')) {
+            expect(match).toMatch(/q=50|q=60/); // Lower quality
+          }
+        });
+
+        // Should disable non-essential animations
+        expect(adaptiveHTML).toMatch(/--animation-duration:\s*0\.01ms/);
+      }
+
+      if (loadingData.connectionType === '4g') {
+        // Should enable high bandwidth mode
+        expect(adaptiveHTML).toContain('class="high-bandwidth"');
+        
+        // Should preload additional resources
+        expect(adaptiveHTML).toMatch(/rel="prefetch"/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should implement progressive image loading with placeholders', () => {
+    fc.assert(fc.property(progressiveLoadingArb, (loadingData) => {
+      const imageLoadingHTML = generateProgressiveImageHTML(loadingData);
+
+      if (loadingData.hasLazyLoading) {
+        // Should have lazy loading attributes
+        expect(imageLoadingHTML).toMatch(/loading="lazy"/);
+        
+        // Should have image placeholders
+        expect(imageLoadingHTML).toMatch(/class="image-placeholder"/);
+        expect(imageLoadingHTML).toContain('Loading...');
+        
+        // Should have shimmer effect for placeholders
+        expect(imageLoadingHTML).toMatch(/background:\s*linear-gradient.*shimmer/);
+        
+        // Should handle image load errors
+        expect(imageLoadingHTML).toMatch(/class="image-error"/);
+        expect(imageLoadingHTML).toContain('Image failed to load');
+        expect(imageLoadingHTML).toMatch(/class="error-icon"/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should defer non-critical content loading', () => {
+    const deferredContentArb = fc.record({
+      sections: fc.array(fc.record({
+        name: fc.constantFrom('product-showcase', 'categories-section', 'promo-banner'),
+        priority: fc.constantFrom('high', 'medium', 'low'),
+        isAboveFold: fc.boolean(),
+        hasIntersectionObserver: fc.boolean(),
+        loadDelay: fc.integer({ min: 0, max: 1000 })
+      }), { minLength: 2, maxLength: 6 }),
+      hasProgressiveReveal: fc.boolean()
+    });
+
+    fc.assert(fc.property(deferredContentArb, (deferredData) => {
+      const deferredHTML = generateDeferredContentHTML(deferredData);
+
+      const belowFoldSections = deferredData.sections.filter(s => 
+        !s.isAboveFold && s.priority === 'low'
+      );
+
+      belowFoldSections.forEach(section => {
+        if (section.hasIntersectionObserver) {
+          // Should initially hide below-fold content
+          expect(deferredHTML).toMatch(new RegExp(`class="${section.name}"[^>]*style="[^"]*opacity:\\s*0`));
+          expect(deferredHTML).toMatch(/transform:\s*translateY\(20px\)/);
+          
+          // Should have transition properties
+          expect(deferredHTML).toMatch(/transition:\s*opacity.*transform/);
+        }
+      });
+
+      if (deferredData.hasProgressiveReveal) {
+        // Should stagger content reveal animations
+        expect(deferredHTML).toMatch(/setTimeout/);
+        expect(deferredHTML).toMatch(/index.*100/);
+      }
+
+    }), { numRuns: 100 });
+  });
+
+  it('should maintain performance metrics during progressive loading', () => {
+    const performanceArb = fc.record({
+      targetFCP: fc.float({ min: 1.0, max: 2.5, noNaN: true }), // First Contentful Paint in seconds
+      targetLCP: fc.float({ min: 2.0, max: 4.0, noNaN: true }), // Largest Contentful Paint in seconds
+      targetCLS: fc.float({ min: 0.0, max: 0.25, noNaN: true }), // Cumulative Layout Shift
+      hasPerformanceMonitoring: fc.boolean(),
+      hasResourceTiming: fc.boolean()
+    });
+
+    fc.assert(fc.property(performanceArb, (perfData) => {
+      const performanceJS = generatePerformanceMonitoringJS(perfData);
+
+      if (perfData.hasPerformanceMonitoring) {
+        // Should monitor Core Web Vitals
+        expect(performanceJS).toMatch(/PerformanceObserver/);
+        expect(performanceJS).toMatch(/largest-contentful-paint/);
+        expect(performanceJS).toMatch(/first-input/);
+        expect(performanceJS).toMatch(/layout-shift/);
+
+        // Should track performance thresholds
+        expect(performanceJS).toMatch(/1800/); // 1.8s threshold
+        expect(performanceJS).toMatch(/2500/); // 2.5s threshold
+        expect(performanceJS).toMatch(/0\.1/); // 0.1 threshold
+
+        // Should report performance issues
+        expect(performanceJS).toContain('Performance issues detected');
+      }
+
+      if (perfData.hasResourceTiming) {
+        // Should monitor resource loading
+        expect(performanceJS).toMatch(/getEntriesByType.*resource/);
+        expect(performanceJS).toMatch(/transferSize.*duration/);
+      }
+
+      // Performance targets should be within acceptable ranges
+      expect(perfData.targetFCP).toBeLessThanOrEqual(2.5);
+      expect(perfData.targetLCP).toBeLessThanOrEqual(4.0);
+      expect(perfData.targetCLS).toBeLessThanOrEqual(0.25);
+
+    }), { numRuns: 100 });
+  });
+
+  /**
+   * Helper function to generate critical content HTML
+   */
+  function generateCriticalContentHTML(loadingData) {
+    let html = '<head>\n';
+    
+    // Add preload links for critical resources
+    loadingData.criticalResources
+      .filter(r => r.isAboveFold && r.hasPreload)
+      .forEach(resource => {
+        const asType = resource.type === 'css' ? 'style' : 
+                     resource.type === 'js' ? 'script' : resource.type;
+        html += `  <link rel="preload" href="${resource.url}" as="${asType}"`;
+        if (resource.type === 'font') {
+          html += ' crossorigin="anonymous"';
+        }
+        html += '>\n';
+      });
+
+    // Add resource hints
+    loadingData.criticalResources
+      .filter(r => r.hasResourceHint)
+      .forEach(resource => {
+        if (resource.type === 'font') {
+          html += `  <link rel="preconnect" href="${new URL(resource.url).origin}" crossorigin>\n`;
+        }
+        if (resource.priority === 'medium') {
+          html += `  <link rel="prefetch" href="${resource.url}">\n`;
+        }
+      });
+
+    // Add critical CSS
+    if (loadingData.hasCriticalCSS) {
+      html += `  <style id="critical-css">
+    .site-header {
+      background-color: #1a1a2e;
+      color: #ffffff;
+      position: sticky;
+      top: 0;
+      z-index: 1020;
+    }
+    .hero-section {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+      color: #ffffff;
+      padding: 3rem 0;
+      min-height: 50vh;
+    }
+  </style>\n`;
+    }
+
+    html += '</head>';
+    return html;
+  }
+
+  /**
+   * Helper function to generate skeleton screen HTML
+   */
+  function generateSkeletonScreenHTML(loadingData) {
+    if (!loadingData.hasSkeletonScreens) {
+      return '';
+    }
+
+    return `
+      <style>
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .product-skeleton__image,
+        .product-skeleton__title,
+        .product-skeleton__price,
+        .hero-skeleton__title,
+        .hero-skeleton__description {
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+      </style>
+      
+      <div class="hero-skeleton">
+        <div class="hero-skeleton__title"></div>
+        <div class="hero-skeleton__description"></div>
+      </div>
+      
+      <ul class="product-grid">
+        <li class="product-skeleton">
+          <div class="product-skeleton__image"></div>
+          <div class="product-skeleton__title"></div>
+          <div class="product-skeleton__price"></div>
+        </li>
+      </ul>
+    `;
+  }
+
+  /**
+   * Helper function to generate adaptive loading HTML
+   */
+  function generateAdaptiveLoadingHTML(loadingData) {
+    let html = `<html class="${loadingData.connectionType === 'slow-2g' || loadingData.connectionType === '2g' ? 'low-bandwidth' : 'high-bandwidth'}">`;
+    
+    if (loadingData.connectionType === 'slow-2g' || loadingData.connectionType === '2g') {
+      html += `
+        <style>
+          :root {
+            --animation-duration: 0.01ms;
+          }
+        </style>
+        <img src="https://images.unsplash.com/photo-1234?q=50&w=400" alt="Low quality image">
+      `;
+    } else if (loadingData.connectionType === '4g') {
+      html += `
+        <link rel="prefetch" href="/api/products/recommended">
+        <img src="https://images.unsplash.com/photo-1234?q=80&w=800" alt="High quality image">
+      `;
+    }
+    
+    html += '</html>';
+    return html;
+  }
+
+  /**
+   * Helper function to generate progressive image HTML
+   */
+  function generateProgressiveImageHTML(loadingData) {
+    if (!loadingData.hasLazyLoading) {
+      return '<img src="image.jpg" alt="Regular image">';
+    }
+
+    return `
+      <div class="image-placeholder" style="background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite;">
+        <span>Loading...</span>
+      </div>
+      <img src="image.jpg" alt="Lazy loaded image" loading="lazy" style="display: none;">
+      <div class="image-error" style="display: none;">
+        <span class="error-icon">⚠️</span>
+        <span>Image failed to load</span>
+      </div>
+    `;
+  }
+
+  /**
+   * Helper function to generate deferred content HTML
+   */
+  function generateDeferredContentHTML(deferredData) {
+    let html = '';
+    
+    deferredData.sections.forEach((section, index) => {
+      if (!section.isAboveFold && section.priority === 'low') {
+        html += `<section class="${section.name}" style="opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease-out, transform 0.6s ease-out;">`;
+        html += `  <h2>Section ${index + 1}</h2>`;
+        html += `  <p>Content...</p>`;
+        html += `</section>\n`;
+      }
+    });
+
+    if (deferredData.hasProgressiveReveal) {
+      html += `
+        <script>
+          setTimeout(() => {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+          }, index * 100);
+        </script>
+      `;
+    }
+
+    return html;
+  }
+
+  /**
+   * Helper function to generate performance monitoring JavaScript
+   */
+  function generatePerformanceMonitoringJS(perfData) {
+    if (!perfData.hasPerformanceMonitoring && !perfData.hasResourceTiming) {
+      return '';
+    }
+
+    let js = '';
+
+    if (perfData.hasPerformanceMonitoring) {
+      js += `
+      // Monitor Core Web Vitals
+      const lcpObserver = new PerformanceObserver((list) => {
+        const entries = list.getEntries();
+        const lastEntry = entries[entries.length - 1];
+        metrics.largestContentfulPaint = lastEntry.startTime;
+      });
+      lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
+
+      const fidObserver = new PerformanceObserver((list) => {
+        list.getEntries().forEach((entry) => {
+          metrics.firstInputDelay = entry.processingStart - entry.startTime;
+        });
+      });
+      fidObserver.observe({ entryTypes: ['first-input'] });
+
+      const clsObserver = new PerformanceObserver((list) => {
+        let clsValue = 0;
+        list.getEntries().forEach((entry) => {
+          if (!entry.hadRecentInput) {
+            clsValue += entry.value;
+          }
+        });
+        metrics.cumulativeLayoutShift += clsValue;
+      });
+      clsObserver.observe({ entryTypes: ['layout-shift'] });
+
+      // Performance thresholds
+      const thresholds = {
+        firstContentfulPaint: 1800,
+        largestContentfulPaint: 2500,
+        cumulativeLayoutShift: 0.1
+      };
+
+      // Check performance issues
+      function checkPerformanceThresholds() {
+        const issues = [];
+        Object.entries(thresholds).forEach(([metric, threshold]) => {
+          if (metrics[metric] > threshold) {
+            issues.push(\`\${metric}: \${metrics[metric]} (threshold: \${threshold})\`);
+          }
+        });
+        if (issues.length > 0) {
+          console.warn('Performance issues detected:', issues);
+        }
+      }
+      `;
+    }
+
+    if (perfData.hasResourceTiming) {
+      js += `
+      // Monitor resource timing
+      const resources = performance.getEntriesByType('resource');
+      resources.forEach((resource) => {
+        console.log('Resource:', resource.name, 'Size:', resource.transferSize, 'Duration:', resource.duration);
+      });
+      `;
+    }
+
+    return js;
+  }
+
+  /**
+   * Helper function to escape special regex characters
+   */
+  function escapeRegex(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+});

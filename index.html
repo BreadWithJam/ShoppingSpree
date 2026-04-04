@@ -25,8 +25,14 @@
   <link rel="preload" href="styles.css" as="style">
   <link rel="preload" href="js/main.js" as="script">
   
+  <!-- Resource hints for performance -->
+  <link rel="dns-prefetch" href="//images.unsplash.com">
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
+  <link rel="prefetch" href="/api/products/featured">
+  <link rel="prefetch" href="/api/categories">
+  
   <!-- Stylesheets -->
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=9" data-critical>
   
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -71,11 +77,6 @@
       </div>
       
       <nav class="site-header__navigation" role="navigation" aria-label="Main navigation">
-        <button class="nav-toggle" aria-label="Toggle navigation menu" aria-expanded="false">
-          <span class="nav-toggle__line"></span>
-          <span class="nav-toggle__line"></span>
-          <span class="nav-toggle__line"></span>
-        </button>
         <ul class="nav-menu">
           <li class="nav-menu__item">
             <a href="/" class="nav-menu__link" aria-current="page">Home</a>
@@ -588,6 +589,206 @@
         <h2 id="promo-heading" class="promo-banner__title">Summer Sale — Up to 60% Off!</h2>
         <p class="promo-banner__description">Limited time offer. Use code <strong>SUMMER60</strong> at checkout.</p>
         <a href="/sale" class="button button--inverse">Shop the Sale</a>
+      </div>
+    </section>
+
+    <!-- Trust Signals Section -->
+    <section class="trust-signals" role="region" aria-labelledby="trust-signals-heading">
+      <div class="section-container">
+        <header class="section-header">
+          <h2 id="trust-signals-heading" class="section-title">Why Shop <span class="section-title__highlight">With Us</span></h2>
+        </header>
+        
+        <!-- Security and Policy Information -->
+        <div class="trust-signals__policies">
+          <div class="policy-card">
+            <div class="policy-card__icon" aria-hidden="true">🔒</div>
+            <h3 class="policy-card__title">Secure Shopping</h3>
+            <p class="policy-card__description">SSL encrypted checkout with 256-bit security</p>
+          </div>
+          <div class="policy-card">
+            <div class="policy-card__icon" aria-hidden="true">🚚</div>
+            <h3 class="policy-card__title">Free Shipping</h3>
+            <p class="policy-card__description">Free delivery on orders over $50</p>
+          </div>
+          <div class="policy-card">
+            <div class="policy-card__icon" aria-hidden="true">↩️</div>
+            <h3 class="policy-card__title">Easy Returns</h3>
+            <p class="policy-card__description">30-day hassle-free return policy</p>
+          </div>
+          <div class="policy-card">
+            <div class="policy-card__icon" aria-hidden="true">💬</div>
+            <h3 class="policy-card__title">24/7 Support</h3>
+            <p class="policy-card__description">Customer service available around the clock</p>
+          </div>
+        </div>
+
+        <!-- Security Badges -->
+        <div class="trust-signals__badges">
+          <div class="security-badge" role="img" aria-label="SSL Secured">
+            <span class="security-badge__icon">🔐</span>
+            <span class="security-badge__text">SSL Secured</span>
+          </div>
+          <div class="security-badge" role="img" aria-label="Money Back Guarantee">
+            <span class="security-badge__icon">💰</span>
+            <span class="security-badge__text">Money Back Guarantee</span>
+          </div>
+          <div class="security-badge" role="img" aria-label="Trusted by 50,000+ customers">
+            <span class="security-badge__icon">⭐</span>
+            <span class="security-badge__text">50,000+ Happy Customers</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Customer Reviews Section -->
+    <section class="customer-reviews" role="region" aria-labelledby="reviews-heading">
+      <div class="section-container">
+        <header class="section-header">
+          <h2 id="reviews-heading" class="section-title">Customer <span class="section-title__highlight">Reviews</span></h2>
+          <div class="reviews-summary" itemscope itemtype="https://schema.org/AggregateRating">
+            <div class="reviews-summary__rating">
+              <span class="reviews-summary__stars" role="img" aria-label="4.8 out of 5 stars">
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+              </span>
+              <span class="reviews-summary__score" itemprop="ratingValue">4.8</span>
+              <span class="reviews-summary__count">(<span itemprop="reviewCount">2,847</span> reviews)</span>
+            </div>
+          </div>
+        </header>
+        
+        <div class="reviews-grid">
+          <article class="review-card" itemscope itemtype="https://schema.org/Review">
+            <div class="review-card__header">
+              <div class="review-card__rating" role="img" aria-label="5 out of 5 stars">
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+              </div>
+              <div class="review-card__author" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                <span class="review-card__name" itemprop="name">Sarah M.</span>
+                <span class="review-card__verified">Verified Purchase</span>
+              </div>
+            </div>
+            <blockquote class="review-card__content" itemprop="reviewBody">
+              "Amazing quality and fast shipping! The wireless headphones exceeded my expectations. Great customer service too."
+            </blockquote>
+            <time class="review-card__date" itemprop="datePublished" datetime="2026-03-15">March 15, 2026</time>
+          </article>
+
+          <article class="review-card" itemscope itemtype="https://schema.org/Review">
+            <div class="review-card__header">
+              <div class="review-card__rating" role="img" aria-label="5 out of 5 stars">
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+              </div>
+              <div class="review-card__author" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                <span class="review-card__name" itemprop="name">Mike R.</span>
+                <span class="review-card__verified">Verified Purchase</span>
+              </div>
+            </div>
+            <blockquote class="review-card__content" itemprop="reviewBody">
+              "Best online shopping experience I've had. Products arrived exactly as described and the return process is super easy."
+            </blockquote>
+            <time class="review-card__date" itemprop="datePublished" datetime="2026-03-12">March 12, 2026</time>
+          </article>
+
+          <article class="review-card" itemscope itemtype="https://schema.org/Review">
+            <div class="review-card__header">
+              <div class="review-card__rating" role="img" aria-label="4 out of 5 stars">
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--filled" aria-hidden="true">★</span>
+                <span class="star star--empty" aria-hidden="true">☆</span>
+              </div>
+              <div class="review-card__author" itemprop="author" itemscope itemtype="https://schema.org/Person">
+                <span class="review-card__name" itemprop="name">Jessica L.</span>
+                <span class="review-card__verified">Verified Purchase</span>
+              </div>
+            </div>
+            <blockquote class="review-card__content" itemprop="reviewBody">
+              "Great selection and competitive prices. The smart watch I ordered works perfectly and arrived ahead of schedule."
+            </blockquote>
+            <time class="review-card__date" itemprop="datePublished" datetime="2026-03-10">March 10, 2026</time>
+          </article>
+        </div>
+        
+        <div class="reviews-cta">
+          <a href="/reviews" class="button button--secondary">Read All Reviews</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Social Proof Section -->
+    <section class="social-proof" role="region" aria-labelledby="social-proof-heading">
+      <div class="section-container">
+        <header class="section-header">
+          <h2 id="social-proof-heading" class="section-title">Join <span class="section-title__highlight">Thousands</span> of Happy Customers</h2>
+        </header>
+        
+        <div class="testimonials-grid">
+          <div class="testimonial-card">
+            <blockquote class="testimonial-card__quote">
+              "ShoppingSpree has become my go-to for everything. The quality is consistently excellent and the prices can't be beat."
+            </blockquote>
+            <cite class="testimonial-card__author">
+              <span class="testimonial-card__name">Emma Thompson</span>
+              <span class="testimonial-card__title">Fashion Blogger</span>
+            </cite>
+          </div>
+
+          <div class="testimonial-card">
+            <blockquote class="testimonial-card__quote">
+              "As a tech enthusiast, I appreciate their wide selection of electronics and the detailed product descriptions."
+            </blockquote>
+            <cite class="testimonial-card__author">
+              <span class="testimonial-card__name">David Chen</span>
+              <span class="testimonial-card__title">Software Engineer</span>
+            </cite>
+          </div>
+
+          <div class="testimonial-card">
+            <blockquote class="testimonial-card__quote">
+              "The customer service is outstanding. They helped me find exactly what I needed and processed my return seamlessly."
+            </blockquote>
+            <cite class="testimonial-card__author">
+              <span class="testimonial-card__name">Maria Rodriguez</span>
+              <span class="testimonial-card__title">Small Business Owner</span>
+            </cite>
+          </div>
+        </div>
+
+        <!-- Social Media Integration -->
+        <div class="social-media-proof">
+          <p class="social-media-proof__text">Follow us for daily deals and customer spotlights:</p>
+          <div class="social-media-links">
+            <a href="https://instagram.com/shoppingspree" class="social-link" aria-label="Follow us on Instagram">
+              <span class="social-link__icon" aria-hidden="true">📷</span>
+              <span class="social-link__text">Instagram</span>
+              <span class="social-link__count">25K followers</span>
+            </a>
+            <a href="https://facebook.com/shoppingspree" class="social-link" aria-label="Follow us on Facebook">
+              <span class="social-link__icon" aria-hidden="true">📘</span>
+              <span class="social-link__text">Facebook</span>
+              <span class="social-link__count">18K likes</span>
+            </a>
+            <a href="https://twitter.com/shoppingspree" class="social-link" aria-label="Follow us on Twitter">
+              <span class="social-link__icon" aria-hidden="true">🐦</span>
+              <span class="social-link__text">Twitter</span>
+              <span class="social-link__count">12K followers</span>
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   </main>
