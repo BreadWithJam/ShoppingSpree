@@ -629,64 +629,6 @@ p, h1, h2, h3, h4, h5, h6 {
    CSS Feature Detection & Fallbacks
    ========================================================================== */
 
-/* CSS Grid Fallbacks */
-.product-grid {
-  /* Fallback: Flexbox for older browsers */
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-lg);
-}
-
-/* Progressive enhancement: CSS Grid for modern browsers */
-@supports (display: grid) {
-  .product-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
-  }
-  
-  /* Progressive enhancement for larger screens */
-  @media (min-width: 480px) {
-    .product-grid {
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    }
-  }
-  
-  @media (min-width: 640px) {
-    .product-grid {
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    }
-  }
-  
-  @media (min-width: 768px) {
-    .product-grid {
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .product-grid {
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: var(--space-2xl);
-    }
-  }
-}
-
-/* Flexbox fallback for product cards */
-.product-grid > li {
-  /* Fallback: Fixed width for flexbox */
-  flex: 0 1 250px;
-  min-width: 200px;
-}
-
-@supports (display: grid) {
-  .product-grid > li {
-    /* Reset flex properties when grid is supported */
-    flex: none;
-    min-width: auto;
-  }
-}
-
 /* Categories Grid Fallbacks */
 .categories-grid {
   /* Fallback: Flexbox */
@@ -891,31 +833,6 @@ p, h1, h2, h3, h4, h5, h6 {
 .cart-button:hover,
 .cart-button:focus {
   text-decoration: underline;
-}
-
-/* Grid support enhancements */
-.supports-grid .product-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-.supports-grid .categories-grid {
-  display: flex;
-  flex-direction: row;
-  gap: var(--space-md);
-  overflow-x: auto;
-  padding: var(--space-sm) 0;
-}
-
-/* No grid fallbacks */
-.no-grid .product-grid {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.no-grid .product-grid > li {
-  flex: 0 1 250px;
-  min-width: 200px;
 }
 
 /* Custom properties enhancements */
@@ -3169,7 +3086,7 @@ footer a { color: #e94560; text-decoration: none; }
 /* Enhanced Product Grid Layout System - Mobile-First */
 .product-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-lg);
   margin-top: var(--space-xl);
   list-style: none;
@@ -3181,7 +3098,7 @@ footer a { color: #e94560; text-decoration: none; }
 /* Progressive enhancement for small tablets */
 @media (min-width: 480px) {
   .product-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-lg);
   }
 }
@@ -3189,7 +3106,7 @@ footer a { color: #e94560; text-decoration: none; }
 /* Progressive enhancement for tablets */
 @media (min-width: 640px) {
   .product-grid {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-xl);
   }
 }
@@ -3197,7 +3114,7 @@ footer a { color: #e94560; text-decoration: none; }
 /* Progressive enhancement for large tablets */
 @media (min-width: 768px) {
   .product-grid {
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-xl);
   }
 }
@@ -3205,7 +3122,7 @@ footer a { color: #e94560; text-decoration: none; }
 /* Progressive enhancement for desktop */
 @media (min-width: 1024px) {
   .product-grid {
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-2xl);
   }
 }
@@ -3213,7 +3130,7 @@ footer a { color: #e94560; text-decoration: none; }
 /* Progressive enhancement for large desktop */
 @media (min-width: 1280px) {
   .product-grid {
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-2xl);
     max-width: 1400px;
     margin-left: auto;
@@ -3224,7 +3141,7 @@ footer a { color: #e94560; text-decoration: none; }
 /* Progressive enhancement for extra large screens */
 @media (min-width: 1536px) {
   .product-grid {
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: var(--space-2xl);
   }
 }
@@ -3267,15 +3184,19 @@ footer a { color: #e94560; text-decoration: none; }
 .product-card__image-container {
   position: relative;
   width: 100%;
-  height: 200px;
+  min-height: 250px;
   background-color: var(--color-surface-alt);
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .product-card__image {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: 300px;
+  object-fit: contain;
   transition: transform var(--transition-normal);
 }
 
