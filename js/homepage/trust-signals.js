@@ -27,40 +27,63 @@ class TrustSignals extends BaseModule {
       socialProofTracked: false
     };
     
-    this.init();
+    this.observer = null;
   }
 
-  init() {
-    this.bindEvents();
+  hasTrustSignalSections() {
+    return Boolean(
+      document.querySelector(this.selectors.trustSignalsSection) ||
+      document.querySelector(this.selectors.reviewsSection) ||
+      document.querySelector(this.selectors.socialProofSection)
+    );
+  }
+
+  async init() {
+    if (!this.hasTrustSignalSections()) {
+      console.info('TrustSignals module skipped – no sections present.');
+      return;
+    }
+
+    await super.init();
     this.setupIntersectionObserver();
     this.enhanceAccessibility();
     this.trackTrustSignalViews();
   }
 
+  async findElements() {
+    this.setElement('trustSignalsSection', document.querySelector(this.selectors.trustSignalsSection));
+    this.setElement('reviewsSection', document.querySelector(this.selectors.reviewsSection));
+    this.setElement('socialProofSection', document.querySelector(this.selectors.socialProofSection));
+    this.setElement('reviewsCta', document.querySelector(this.selectors.reviewsCta));
+    this.setElement('socialLinks', document.querySelectorAll(this.selectors.socialLinks));
+    this.setElement('policyCards', document.querySelectorAll(this.selectors.policyCards));
+    this.setElement('securityBadges', document.querySelectorAll(this.selectors.securityBadges));
+  }
+
   bindEvents() {
     // Handle review CTA clicks
-    const reviewsCta = document.querySelector(this.selectors.reviewsCta);
+    const reviewsCta = this.getElement('reviewsCta');
     if (reviewsCta) {
-      reviewsCta.addEventListener('click', this.handleReviewsCtaClick.bind(this));
+      this.addEventListener(reviewsCta, 'click', this.handleReviewsCtaClick);
     }
 
     // Handle social link clicks
-    const socialLinks = document.querySelectorAll(this.selectors.socialLinks);
-    socialLinks.forEach(link => {
-      link.addEventListener('click', this.handleSocialLinkClick.bind(this));
+    const socialLinks = this.getElement('socialLinks');
+    socialLinks?.forEach(link => {
+      this.addEventListener(link, 'click', this.handleSocialLinkClick);
     });
 
     // Handle policy card interactions
-    const policyCards = document.querySelectorAll(this.selectors.policyCards);
-    policyCards.forEach(card => {
-      card.addEventListener('mouseenter', this.handlePolicyCardHover.bind(this));
-      card.addEventListener('focus', this.handlePolicyCardFocus.bind(this));
+    const policyCards = this.getElement('policyCards');
+    policyCards?.forEach(card => {
+      this.addEventListener(card, 'mouseenter', this.handlePolicyCardHover);
+      this.addEventListener(card, 'focus', this.handlePolicyCardFocus);
     });
 
     // Handle security badge interactions
-    const securityBadges = document.querySelectorAll(this.selectors.securityBadges);
-    securityBadges.forEach(badge => {
-      badge.addEventListener('click', this.handleSecurityBadgeClick.bind(this));
+    const securityBadges = this.getElement('securityBadges');
+    securityBadges?.forEach(badge => {
+      this.addEventListener(badge, 'click', this.handleSecurityBadgeClick);
     });
   }
 
@@ -84,9 +107,9 @@ class TrustSignals extends BaseModule {
 
     // Observe trust signal sections
     const sections = [
-      document.querySelector(this.selectors.trustSignalsSection),
-      document.querySelector(this.selectors.reviewsSection),
-      document.querySelector(this.selectors.socialProofSection)
+      this.getElement('trustSignalsSection'),
+      this.getElement('reviewsSection'),
+      this.getElement('socialProofSection')
     ].filter(Boolean);
 
     sections.forEach(section => {
@@ -112,7 +135,7 @@ class TrustSignals extends BaseModule {
   }
 
   animatePolicyCards() {
-    const policyCards = document.querySelectorAll(this.selectors.policyCards);
+    const policyCards = this.getElement('policyCards');
     
     policyCards.forEach((card, index) => {
       setTimeout(() => {
@@ -377,56 +400,30 @@ class TrustSignals extends BaseModule {
 
   trackTrustSignalViews() {
     // Track initial page load with trust signals
+    const section = this.getElement('trustSignalsSection');
+    const reviews = this.getElement('reviewsSection');
+    const socialProof = this.getElement('socialProofSection');
+
+    if (!section && !reviews && !socialProof) {
+      return;
+    }
+
+    // Track trust signal views
     this.trackEvent('trust_signals', 'page_loaded', {
-      trust_signals_present: true,
+      trust_signals_present: Boolean(section),
       policy_count: document.querySelectorAll(this.selectors.policyCards).length,
       review_count: document.querySelectorAll(this.selectors.reviewCards).length,
       testimonial_count: document.querySelectorAll(this.selectors.testimonialCards).length
     });
   }
 
-  // Utility method for event tracking
-  trackEvent(category, action, data = {}) {
-    if (typeof window.gtag === 'function') {
-      window.gtag('event', action, {
-        event_category: category,
-        ...data
-      });
-    }
-    
-    // Also log to console in development
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log('Trust Signals Event:', { category, action, data });
-    }
-  }
-
   destroy() {
     if (this.observer) {
       this.observer.disconnect();
     }
-    
-    // Remove event listeners
-    const reviewsCta = document.querySelector(this.selectors.reviewsCta);
-    if (reviewsCta) {
-      reviewsCta.removeEventListener('click', this.handleReviewsCtaClick);
-    }
-    
-    const socialLinks = document.querySelectorAll(this.selectors.socialLinks);
-    socialLinks.forEach(link => {
-      link.removeEventListener('click', this.handleSocialLinkClick);
-    });
-    
+
     super.destroy();
   }
-}
-
-// Auto-initialize if DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    new TrustSignals();
-  });
-} else {
-  new TrustSignals();
 }
 
 export { TrustSignals };

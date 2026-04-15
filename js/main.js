@@ -5,6 +5,7 @@
 console.log('main.js execution started');
 
 // Import modules from homepage folder
+import { ShopManager } from './shop/shop-manager.js';
 import { NavigationManager } from './homepage/navigation.js';
 import { SearchManager } from './homepage/search.js';
 import { CartManager } from './homepage/cart.js';
@@ -16,6 +17,7 @@ import { LazyLoadingManager } from './homepage/lazy-loading.js';
 import { UserPersonalizationManager } from './homepage/user-personalization.js';
 import { TrustSignals } from './homepage/trust-signals.js';
 import { StackedCardsManager } from './homepage/stacked-cards.js';
+import { setupMockApi } from './utils/mock-api.js';
 
 /**
  * Application Class - Main application controller
@@ -24,6 +26,7 @@ class EcommerceApp {
   constructor() {
     this.modules = new Map();
     this.isInitialized = false;
+    this.deferredModules = [];
   }
 
   /**
@@ -31,6 +34,8 @@ class EcommerceApp {
    */
   async init() {
     try {
+      setupMockApi();
+
       // Wait for DOM to be ready
       if (document.readyState === 'loading') {
         await new Promise(resolve => {
@@ -40,6 +45,9 @@ class EcommerceApp {
 
       // Initialize core modules
       await this.initializeModules();
+
+      // Schedule deferred/optional modules when browser is idle
+      this.initializeDeferredModules();
       
       // Set up global error handling
       this.setupErrorHandling();
@@ -58,31 +66,71 @@ class EcommerceApp {
    * Initialize all application modules
    */
   async initializeModules() {
-    const moduleConfigs = [
-      { name: 'navigation', class: NavigationManager },
-      { name: 'search', class: SearchManager },
-      { name: 'cart', class: CartManager },
-      { name: 'product', class: ProductManager },
-      { name: 'userPersonalization', class: UserPersonalizationManager },
-      { name: 'trustSignals', class: TrustSignals },
-      { name: 'stackedCards', class: StackedCardsManager },
-      { name: 'accessibility', class: AccessibilityManager },
-      { name: 'performance', class: PerformanceManager },
-      { name: 'heroImageLoader', class: HeroImageLoader },
-      { name: 'lazyLoading', class: LazyLoadingManager }
+    const immediateModules = [
+      { name: 'navigation', module: NavigationManager, selector: '.site-header' },
+      { name: 'search', module: SearchManager, selector: '.search-form' },
+      { name: 'cart', module: CartManager, selector: '.cart-component' },
+      { name: 'product', module: ProductManager, selector: '.product-grid' },
+      { name: 'shop', module: ShopManager, selector: '#product-grid' },
+      { name: 'stackedCards', module: StackedCardsManager, selector: '.stacked-cards-container' },
+      { name: 'heroImageLoader', module: HeroImageLoader, selector: '[data-hero-image], .hero-section__media' },
+      { name: 'lazyLoading', module: LazyLoadingManager },
+      { name: 'accessibility', module: AccessibilityManager }
     ];
 
-    for (const config of moduleConfigs) {
-      try {
-        const moduleInstance = new config.class();
-        await moduleInstance.init();
-        this.modules.set(config.name, moduleInstance);
-        console.log(`${config.name} module initialized`);
-      } catch (error) {
-        console.error(`Failed to initialize ${config.name} module:`, error);
-        // Continue with other modules even if one fails
-      }
+    const deferredModules = [
+      { name: 'userPersonalization', module: UserPersonalizationManager, selector: '.user-account, .login-button, .personalized-content' },
+      { name: 'trustSignals', module: TrustSignals, selector: '.trust-signals, .customer-reviews, .social-proof' },
+      { name: 'performance', module: PerformanceManager }
+    ];
+
+    for (const config of immediateModules) {
+      await this.safeInitializeModule(config);
     }
+
+    this.deferredModules = deferredModules;
+  }
+
+  async safeInitializeModule(config) {
+    if (this.modules.has(config.name)) {
+      return;
+    }
+
+    if (!this.shouldInitializeModule(config)) {
+      console.info(`Skipping ${config.name} module – no matching DOM nodes found.`);
+      return;
+    }
+
+    try {
+      const instance = new config.module();
+      await instance.init?.();
+      this.modules.set(config.name, instance);
+      console.log(`${config.name} module initialized`);
+    } catch (error) {
+      console.error(`Failed to initialize ${config.name} module:`, error);
+    }
+  }
+
+  shouldInitializeModule(config) {
+    if (!config.selector) {
+      return true;
+    }
+
+    return Boolean(document.querySelector(config.selector));
+  }
+
+  initializeDeferredModules() {
+    if (!Array.isArray(this.deferredModules) || !this.deferredModules.length) {
+      return;
+    }
+
+    const schedule = window.requestIdleCallback || ((cb) => setTimeout(() => cb({}), 150));
+
+    this.deferredModules.forEach(config => {
+      schedule(() => {
+        this.safeInitializeModule(config);
+      });
+    });
   }
 
   /**
