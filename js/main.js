@@ -2,6 +2,7 @@
  * Main JavaScript Entry Point
  * Ecommerce Homepage - Modern ES6+ Implementation
  */
+console.log('main.js execution started');
 
 // Import modules from homepage folder
 import { NavigationManager } from './homepage/navigation.js';
@@ -14,6 +15,7 @@ import { HeroImageLoader } from './homepage/hero-image-loader.js';
 import { LazyLoadingManager } from './homepage/lazy-loading.js';
 import { UserPersonalizationManager } from './homepage/user-personalization.js';
 import { TrustSignals } from './homepage/trust-signals.js';
+import { StackedCardsManager } from './homepage/stacked-cards.js';
 
 /**
  * Application Class - Main application controller
@@ -63,6 +65,7 @@ class EcommerceApp {
       { name: 'product', class: ProductManager },
       { name: 'userPersonalization', class: UserPersonalizationManager },
       { name: 'trustSignals', class: TrustSignals },
+      { name: 'stackedCards', class: StackedCardsManager },
       { name: 'accessibility', class: AccessibilityManager },
       { name: 'performance', class: PerformanceManager },
       { name: 'heroImageLoader', class: HeroImageLoader },

@@ -27,8 +27,6 @@
 
   <!-- Preload critical resources -->
   <link rel="preload" href="styles.css" as="style">
-  <link rel="preload" href="js/main.js" as="script">
-
   <!-- Resource hints for performance -->
   <link rel="dns-prefetch" href="//images.unsplash.com">
   <link rel="preconnect" href="https://images.unsplash.com" crossorigin>
@@ -158,39 +156,51 @@
           </div>
         </div>
         <div class="hero-section__media" aria-hidden="true">
-          <div class="hero-section__image-container">
-            <div class="hero-section__loading-placeholder" aria-hidden="true">
-              <div class="hero-section__loading-spinner"></div>
+          <div class="stacked-cards-container">
+            <div class="stacked-card stacked-card--vibrant-1">
+              <div class="stacked-card__content">
+                <span class="stacked-card__tag">Our Standards</span>
+                <h3 class="stacked-card__title">promote<br>quality excellence.</h3>
+                <p class="stacked-card__description">Rigorous testing for products that truly last a lifetime.</p>
+              </div>
+              <div class="stacked-card__footer">
+                <span class="stacked-card__icon">✨</span>
+              </div>
             </div>
-            <picture class="hero-section__picture">
-              <!-- WebP format for modern browsers -->
-              <source media="(min-width: 1024px)"
-                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80&fm=webp 1200w,
-                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80&fm=webp 800w"
-                sizes="(min-width: 1024px) 600px, 400px" type="image/webp">
-              <source media="(min-width: 768px)"
-                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80&fm=webp 800w,
-                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80&fm=webp 600w"
-                sizes="400px" type="image/webp">
-              <!-- JPEG fallback -->
-              <source media="(min-width: 1024px)"
-                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80 1200w,
-                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80 800w"
-                sizes="(min-width: 1024px) 600px, 400px" type="image/jpeg">
-              <source media="(min-width: 768px)"
-                srcset="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=800&q=80 800w,
-                        https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80 600w"
-                sizes="400px" type="image/jpeg">
-              <img class="hero-section__image"
-                src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80"
-                alt="" loading="eager" width="600" height="400" data-hero-image>
-            </picture>
-            <div class="hero-section__error-state" aria-hidden="true" hidden>
-              <div class="hero-section__error-icon">⚠️</div>
-              <p class="hero-section__error-text">Image failed to load</p>
+
+            <div class="stacked-card stacked-card--vibrant-2">
+              <div class="stacked-card__content">
+                <span class="stacked-card__tag">Our Logistics</span>
+                <h3 class="stacked-card__title">enable<br>swift delivery.</h3>
+                <p class="stacked-card__description">Global fulfillment network delivering in record time.</p>
+              </div>
+              <div class="stacked-card__footer">
+                <span class="stacked-card__icon">🚀</span>
+              </div>
+            </div>
+
+            <div class="stacked-card stacked-card--vibrant-3">
+              <div class="stacked-card__content">
+                <span class="stacked-card__tag">Our Earth</span>
+                <h3 class="stacked-card__title">nurture<br>a greener world.</h3>
+                <p class="stacked-card__description">Sustainable sourcing and carbon-neutral shipping options.</p>
+              </div>
+              <div class="stacked-card__footer">
+                <span class="stacked-card__icon">🌱</span>
+              </div>
+            </div>
+
+            <div class="stacked-card stacked-card--vibrant-4">
+              <div class="stacked-card__content">
+                <span class="stacked-card__tag">Our Promise</span>
+                <h3 class="stacked-card__title">elevate<br>your experience.</h3>
+                <p class="stacked-card__description">Expert support available 24/7 whenever you need us.</p>
+              </div>
+              <div class="stacked-card__footer">
+                <span class="stacked-card__icon">🎧</span>
+              </div>
             </div>
           </div>
-          <div class="hero-section__visual-overlay"></div>
         </div>
       </div>
     </section>
@@ -557,6 +567,7 @@
         <a href="/sale" class="button button--inverse">Shop the Sale</a>
       </div>
     </section>
+
 
     <!-- Trust Signals Section -->
     <section class="trust-signals" role="region" aria-labelledby="trust-signals-heading">
