@@ -395,7 +395,7 @@ class TrustSignals extends BaseModule {
     }
     
     // Also log to console in development
-    if (process.env.NODE_ENV === 'development') {
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       console.log('Trust Signals Event:', { category, action, data });
     }
   }
