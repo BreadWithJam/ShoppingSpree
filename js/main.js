@@ -5,6 +5,7 @@
 console.log('main.js execution started');
 
 // Import modules from homepage folder
+import { ShopManager } from './shop/shop-manager.js';
 import { NavigationManager } from './homepage/navigation.js';
 import { SearchManager } from './homepage/search.js';
 import { CartManager } from './homepage/cart.js';
@@ -59,6 +60,7 @@ class EcommerceApp {
    */
   async initializeModules() {
     const moduleConfigs = [
+      { name: 'shop', class: ShopManager },
       { name: 'navigation', class: NavigationManager },
       { name: 'search', class: SearchManager },
       { name: 'cart', class: CartManager },
